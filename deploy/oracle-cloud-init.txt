@@ -1,0 +1,9 @@
+#!/bin/bash
+# Cole este texto no campo "Script de inicialização" (cloud-init) ao criar a máquina na Oracle.
+# Antes de colar, troque o código abaixo por um segredo seu (mínimo 12 caracteres, sem espaços).
+export CODIGO_ADMIN="troque-por-um-codigo-so-seu"
+# Deixe vazio para usar o endereço grátis https://SEU-IP.sslip.io
+export DOMINIO=""
+export BRANCH="claude/artefato-claudecode-jd4z73"
+curl -fsSL "https://raw.githubusercontent.com/bruninho10273090-netizen/Trilha-do-debravador/refs/heads/$BRANCH/deploy/instalar.sh" -o /root/instalar-trilha.sh
+bash /root/instalar-trilha.sh > /var/log/trilha-instalacao.log 2>&1

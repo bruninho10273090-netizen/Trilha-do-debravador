@@ -1,11 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { DUMMY_HASH, hashPassword, verifyPassword } from '../auth/password.js';
 import { createSession, deleteSession, deleteUserSessions } from '../auth/session.js';
-import { publicUser, requireUser } from '../context.js';
+import { audit, publicUser, requireUser } from '../context.js';
 import { clubLogos, clubs, memberships, users } from '../db/schema.js';
-import { badRequest, conflict, isUniqueViolation, unauthorized } from '../lib/errors.js';
+import { badRequest, conflict, forbidden, isUniqueViolation, unauthorized } from '../lib/errors.js';
 import { BirthDate, parse, Password, PersonName, ProfileFields, Username } from '../lib/validate.js';
 
 const Email = z.email().max(200).transform((e) => e.toLowerCase());
@@ -83,6 +84,21 @@ export async function authRoutes(app: FastifyInstance) {
       if (isUniqueViolation(e)) throw conflict('Esse e-mail já está em uso.');
       throw e;
     }
+  });
+
+  /**
+   * Quem instala o servidor define ADMIN_CLAIM_CODE; a conta logada que digitar esse
+   * código vira administradora da plataforma. Assim não é preciso acessar o servidor.
+   */
+  app.post('/auth/claim-admin', { config: { rateLimit: { max: 5, timeWindow: '1 hour' } } }, async (req) => {
+    const user = requireUser(req);
+    const { code } = parse(z.object({ code: z.string().trim().min(1).max(200) }), req.body);
+    const expected = config.adminClaimCode;
+    const digest = (s: string) => createHash('sha256').update(s).digest();
+    if (!expected || !timingSafeEqual(digest(code), digest(expected))) throw forbidden('Código incorreto.');
+    const [u] = await db.update(users).set({ isPlatformAdmin: true, updatedAt: new Date() }).where(eq(users.id, user.id)).returning();
+    await audit(db, { actorId: user.id, action: 'admin.claim', targetId: user.id });
+    return { user: publicUser(u) };
   });
 
   app.post('/auth/password', authLimit, async (req, reply) => {

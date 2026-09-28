@@ -255,6 +255,19 @@ describe('assinatura', () => {
     expect((await owner.post(`/admin/clubs/${club.id}/subscription/extend`, { days: 10 })).status).toBe(403);
   });
 
+  it('código de administração da plataforma: só funciona com o código certo', async () => {
+    const u = await newUser(app());
+    expect((await u.post('/auth/claim-admin', { code: 'chute-qualquer-123' })).status).toBe(403);
+    expect((await u.get('/admin/clubs')).status).toBe(403);
+    app().config.adminClaimCode = 'codigo-secreto-da-dona';
+    expect((await u.post('/auth/claim-admin', { code: 'codigo-errado-000' })).status).toBe(403);
+    const ok = await u.post('/auth/claim-admin', { code: 'codigo-secreto-da-dona' });
+    expect(ok.body.user.isPlatformAdmin).toBe(true);
+    expect((await u.get('/admin/clubs')).status).toBe(200);
+    app().config.adminClaimCode = '';
+    expect((await client(app()).post('/auth/claim-admin', { code: 'x' })).status).toBe(401);
+  });
+
   it('só a plataforma cria planos e vê todos os clubes', async () => {
     const { owner } = await newClub('Clube Qualquer');
     expect((await owner.post('/admin/plans', { code: 'x', name: 'X', interval: 'mensal', priceCents: 1 })).status).toBe(403);

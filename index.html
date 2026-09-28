@@ -1832,7 +1832,8 @@ function renderClubs(){
      '<div class="grid2"><div class="field"><label for="cc-church">Igreja <span class="muted">(opcional)</span></label><input id="cc-church" name="church" class="input" maxlength="120"></div><div class="field"><label for="cc-region">Associação/Região <span class="muted">(opcional)</span></label><input id="cc-region" name="region" class="input" maxlength="120"></div></div>'+
      '<p class="hint">Você será o administrador do clube: cuida da assinatura, das cores e do logo. Os primeiros 14 dias são grátis.</p>'+
      e('createClub')+'<div><button class="btn" type="submit"'+(App.busy?' disabled':'')+'>'+ic('plus')+'Criar clube</button></div></form></section>'+
-   '</div>';
+   '</div>'+
+   (u.isPlatformAdmin?'':'<details class="info" style="margin-top:4px"><summary>Tenho um código de administração da plataforma</summary><form data-form="claimAdmin" class="row" style="margin-top:10px"><label for="ca-code" class="eyebrow" style="position:absolute;left:-9999px">Código de administração</label><input id="ca-code" name="code" type="password" class="input" required autocomplete="off" placeholder="Código definido na instalação do servidor" style="flex:1;min-width:220px"><button class="btn ghost" type="submit">Confirmar</button></form>'+e('claimAdmin')+'</details>');
   app.innerHTML='<header class="bar"><div class="bar-in"><div class="brand">'+BRAND+'<div style="min-width:0"><div class="brand-name">Trilha do Desbravador</div><span class="brand-sub">Seus clubes</span></div></div>'+
    '<button class="me-chip" data-act="logout" aria-label="Sair da conta"><span class="av sm" style="--avc:#B8820C;--avf:#1D1400" aria-hidden="true">'+esc(initials(u.name))+'</span><span class="me-txt"><strong>'+esc(firstName(u.name))+'</strong><small>Sair</small></span></button></div></header>'+
    '<main class="wrap">'+body+'</main>';
@@ -2168,6 +2169,9 @@ Object.assign(Forms,{
     try{ const r=await Api.post('/clubs',{name:val(d,'name'),church:val(d,'church')||null,region:val(d,'region')||null}); App.busy=false;
       await Srv.loadMe(); await Srv.open(r.club.id); burst(); toast('Clube criado! Você tem 14 dias grátis para experimentar.','gold'); }
     catch(e){ App.busy=false; formErr(e.message); } },
+  async claimAdmin(f){ App.formErrFor='claimAdmin';
+    try{ const r=await Api.post('/auth/claim-admin',{code:String(new FormData(f).get('code')||'')}); Srv.user=r.user; App.formErr=''; toast('Pronto! Agora você tem o Painel da plataforma.','gold'); render(); }
+    catch(e){ formErr(e.status===429?'Muitas tentativas. Espere uma hora.':e.message); } },
   async platPaid(f){ const ref=String(new FormData(f).get('ref')||'').trim();
     try{ await Api.post('/admin/invoices/'+f.dataset.id+'/paid',ref?{reference:ref}:{}); toast('Pagamento confirmado. O clube já está com o período liberado.','gold'); await Srv.loadPlat(); }catch(e){ toast(e.message,'bad'); } },
   async platPlan(f){ const d=new FormData(f), price=parseBRL(d.get('price')), max=String(d.get('maxMembers')||'').trim();

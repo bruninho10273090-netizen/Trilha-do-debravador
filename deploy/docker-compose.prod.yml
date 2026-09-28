@@ -1,0 +1,51 @@
+# Produção numa máquina só: banco, API (que também entrega o app) e Caddy (HTTPS automático).
+# Quem sobe isto é o instalar.sh; as variáveis ficam em deploy/.env (criado na instalação).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trilha
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no deploy/.env}
+      POSTGRES_DB: trilha
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trilha"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://trilha:${DB_PASSWORD}@db:5432/trilha
+      PORT: 3000
+      NODE_ENV: production
+      TRIAL_DAYS: ${TRIAL_DAYS:-14}
+      ADMIN_CLAIM_CODE: ${ADMIN_CLAIM_CODE:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_HOST: ${SITE_HOST:?defina SITE_HOST no deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

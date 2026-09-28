@@ -12,6 +12,7 @@ const Env = z.object({
   RATE_LIMIT: bool.default(true),
   TRIAL_DAYS: z.coerce.number().int().min(0).default(14),
   LOGO_MAX_KB: z.coerce.number().int().min(16).max(5120).default(1024),
+  ADMIN_CLAIM_CODE: z.string().default(''),
   NODE_ENV: z.string().default('development'),
 });
 
@@ -25,6 +26,8 @@ export type Config = {
   rateLimit: boolean;
   trialDays: number;
   logoMaxBytes: number;
+  /** Código secreto que transforma a conta logada em administradora da plataforma (vazio = desligado). */
+  adminClaimCode: string;
   isProd: boolean;
 };
 
@@ -40,6 +43,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     rateLimit: e.RATE_LIMIT,
     trialDays: e.TRIAL_DAYS,
     logoMaxBytes: e.LOGO_MAX_KB * 1024,
+    adminClaimCode: e.ADMIN_CLAIM_CODE.trim().length >= 12 ? e.ADMIN_CLAIM_CODE.trim() : '',
     isProd: e.NODE_ENV === 'production',
   };
 }
