@@ -19,6 +19,8 @@ services:
     environment:
       DATABASE_URL: postgres://trilha:trilha@db:5432/trilha
       PORT: 3000
+      # código para virar administrador da plataforma pelo app (defina antes de subir)
+      ADMIN_CLAIM_CODE: ${ADMIN_CLAIM_CODE:-}
     ports:
       - "3000:3000"
     depends_on:
