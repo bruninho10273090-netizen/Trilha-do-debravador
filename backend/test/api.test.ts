@@ -272,3 +272,22 @@ describe('ranking e auditoria', () => {
     expect((await kid.get(`/clubs/${club.id}/audit`)).status).toBe(403);
   });
 });
+
+describe('classes liberadas', () => {
+  it('o desbravador só mexe na classe atual e nas anteriores', async () => {
+    // Lucas tem 12 anos: classe atual Pesquisador
+    const { dir, club, kid, kidM } = await clubWithKid('Clube Classes');
+    const base = `/clubs/${club.id}/members/${kidM.id}/requirements`;
+    expect((await kid.post(`${base}/amigo_I_1/submit`)).status).toBe(200);
+    expect((await kid.post(`${base}/pesquisador_I_1/submit`)).status).toBe(200);
+    expect((await kid.post(`${base}/pioneiro_I_1/submit`)).status).toBe(403);
+    expect((await kid.patch(`${base}/pioneiro_I_1`, { note: 'adiantando' })).status).toBe(403);
+    expect((await dir.post(`${base}/pioneiro_I_1/approve`)).status).toBe(403);
+    expect((await dir.post(`${base}/approve`, { keys: ['amigo_I_1', 'guia_I_1'] })).status).toBe(403);
+
+    // a liderança passa o Lucas para Pioneiro e a classe é liberada
+    expect((await dir.patch(`/clubs/${club.id}/members/${kidM.id}`, { classId: 'pioneiro' })).status).toBe(200);
+    expect((await kid.post(`${base}/pioneiro_I_1/submit`)).status).toBe(200);
+    expect((await dir.post(`${base}/pioneiro_I_1/approve`)).status).toBe(200);
+  });
+});

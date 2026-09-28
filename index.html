@@ -749,6 +749,9 @@ function greet(){const h=new Date().getHours(); return h<12?'Bom dia':h<18?'Boa 
 function ageOf(b){if(!b) return null; const d=new Date(b+'T12:00:00'); if(isNaN(d)) return null; const n=new Date(); let a=n.getFullYear()-d.getFullYear(); if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate())) a--; return a;}
 function classForAge(a){if(a==null) return 'amigo'; return CLASSES[Math.max(0,Math.min(5,a-10))].id;}
 const memberClass=m=>(m.classId&&CLS[m.classId])?m.classId:classForAge(ageOf(m.birth));
+/* Desbravador vê a classe atual e as que já passou; as seguintes ficam escondidas. */
+const shownClasses=m=>{ const i=CLASSES.findIndex(c=>c.id===memberClass(m)); return i<0?CLASSES:CLASSES.slice(0,i+1); };
+const clsShown=(m,id)=>!!id&&shownClasses(m).some(c=>c.id===id);
 const rid=()=>Math.random().toString(36).slice(2,8);
 const pct=x=>Math.round((x||0)*100);
 const LS={get(k){try{const v=localStorage.getItem(k); return v?JSON.parse(v):null;}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
@@ -1330,7 +1333,7 @@ function viewClasses(m){
     if(!t) return '<section class="card empty"><strong>Nenhum desbravador cadastrado ainda.</strong>'+(isAdmin(m)?'<p style="margin:10px 0 14px">Cadastre os desbravadores do clube ou peça para eles criarem a conta na tela de entrada.</p><button class="btn" data-act="go" data-view="gestao" data-gtab="novo">'+ic('plus')+'Cadastrar desbravador</button>':'<p>Eles aparecem aqui assim que criarem a conta.</p>')+'</section>';
     App.target=t.id;
   }
-  const s=stats(t), cid=(App.cls&&CLS[App.cls])?App.cls:memberClass(t), c=CLS[cid], adv=!!App.adv;
+  const s=stats(t), cid=clsShown(t,App.cls)?App.cls:memberClass(t), c=CLS[cid], adv=!!App.adv;
   const ok=cid+'|'+adv+'|'+t.id;
   if(App.openKey!==ok){ App.openKey=ok; App.open={}; const items=adv?LIST[cid].av:LIST[cid].reg; const p=t.progress||{}; const f=items.find(it=>!(p[it.key]&&p[it.key].s==='aprovado')); App.open[f?f.sec:(adv?'AV':'I')]=true; if(App.jump){App.open={}; App.open[App.jump]=true;} }
   if(App.jump){ App.open[App.jump]=true; App.jump=null; }
@@ -1345,7 +1348,7 @@ function viewClasses(m){
   } else {
     head='<div class="page-head"><div><h1>Minha classe</h1><p class="muted">Abra uma seção da trilha, faça o requisito e toque em Concluí. Nos requisitos escritos, escreva a resposta aqui mesmo. A liderança aprova e o XP entra na hora.</p></div></div>';
   }
-  const strip='<div class="cstrip" role="tablist" aria-label="Classes">'+CLASSES.map(x=>{const r=s.cls[x.id]; const full=r.reg.pct===1; return '<button class="cpill'+(x.id===cid?' on':'')+'" style="'+ccStyle(x.id)+'" data-act="pickCls" data-cls="'+x.id+'" role="tab" aria-selected="'+(x.id===cid)+'"><span class="d">'+(full?ic('check'):'')+'</span>'+x.name+' <small>'+pct(r.reg.pct)+'%</small>'+(x.id===memberClass(t)?'<span class="now">atual</span>':'')+'</button>';}).join('')+'</div>';
+  const strip='<div class="cstrip" role="tablist" aria-label="Classes">'+shownClasses(t).map(x=>{const r=s.cls[x.id]; const full=r.reg.pct===1; return '<button class="cpill'+(x.id===cid?' on':'')+'" style="'+ccStyle(x.id)+'" data-act="pickCls" data-cls="'+x.id+'" role="tab" aria-selected="'+(x.id===cid)+'"><span class="d">'+(full?ic('check'):'')+'</span>'+x.name+' <small>'+pct(r.reg.pct)+'%</small>'+(x.id===memberClass(t)?'<span class="now">atual</span>':'')+'</button>';}).join('')+'</div>';
   const seg='<div class="seg" role="group" aria-label="Tipo de classe"><button class="'+(adv?'':'on')+'" data-act="pickAdv" data-v="0">Regular</button><button class="'+(adv?'on':'')+'" data-act="pickAdv" data-v="1">Avançada · '+esc(c.adv)+'</button></div>';
   return head+strip+'<div class="cols" style="grid-template-columns:minmax(0,1fr)">'+classCard(t,cid,adv,seg)+'</div>'+trailHtml(t,m,cid,adv,canEdit,leader);
 }
@@ -1458,14 +1461,14 @@ function viewEsp(m){
   const self=t.id===m.id; const e=t.esp||{}; const s=stats(t);
   const mine=Object.keys(e).filter(id=>e[id]&&e[id].s);
   const approved=mine.filter(id=>e[id].s==='aprovado').sort((a,b)=>(e[b].at||0)-(e[a].at||0)), going=mine.filter(id=>e[id].s!=='aprovado').sort((a,b)=>(e[b].at||0)-(e[a].at||0));
-  const ccid=(App.espCls&&CLS[App.espCls])?App.espCls:memberClass(t);
+  const ccid=clsShown(t,App.espCls)?App.espCls:memberClass(t);
   const li=linkedItems(ccid), liDone=li.filter(it=>(t.progress||{})[it.key]&&t.progress[it.key].s==='aprovado').length;
   const tab=App.espTab||(going.length?'andamento':'cartao');
   const segs=[['andamento','Em andamento',going.length],['concluidas','Concluídas',approved.length],['cartao','Do cartão',liDone+'/'+li.length],['todas','Catálogo',ESP.length]];
   let body='';
   if(tab==='andamento') body='<section class="card">'+(going.length?'<div class="list">'+going.map(id=>espRowHtml(t,id)).join('')+'</div>':'<div class="empty"><strong>Nenhuma especialidade em andamento.</strong>'+(self?'Veja as que o seu cartão pede e comece por uma delas.':'Quando '+esc(firstName(t.name))+' começar uma, ela aparece aqui.')+'<div style="margin-top:12px"><button class="btn sm ghost" data-act="espTab" data-v="cartao">Ver as do cartão</button></div></div>')+'</section>';
   else if(tab==='concluidas') body='<section class="card"><div class="card-h"><h3>'+(self?'Minha faixa':'Faixa de '+esc(firstName(t.name)))+'</h3><span class="muted small num">'+approved.length+' · '+s.espAreas+' área'+(s.espAreas===1?'':'s')+'</span></div>'+(approved.length?'<div class="sash" style="margin-bottom:14px">'+approved.map(id=>espPatch(espInfo(t,id),true,'')).join('')+'</div><div class="list">'+approved.map(id=>espRowHtml(t,id)).join('')+'</div>':'<div class="empty"><strong>Nenhuma especialidade concluída ainda.</strong>Cada especialidade aprovada vale +'+XP_ESP+' XP e vira um emblema na faixa.</div>')+'</section>';
-  else if(tab==='cartao') body='<div class="cstrip" role="tablist" aria-label="Classe">'+CLASSES.map(x=>{const L=linkedItems(x.id); const dn=L.filter(it=>(t.progress||{})[it.key]&&t.progress[it.key].s==='aprovado').length; return '<button class="cpill'+(x.id===ccid?' on':'')+'" style="'+ccStyle(x.id)+'" data-act="espCls" data-v="'+x.id+'" role="tab" aria-selected="'+(x.id===ccid)+'"><span class="d">'+(L.length&&dn===L.length?ic('check'):'')+'</span>'+x.name+' <small>'+dn+'/'+L.length+'</small>'+(x.id===memberClass(t)?'<span class="now">atual</span>':'')+'</button>';}).join('')+'</div>'+
+  else if(tab==='cartao') body='<div class="cstrip" role="tablist" aria-label="Classe">'+shownClasses(t).map(x=>{const L=linkedItems(x.id); const dn=L.filter(it=>(t.progress||{})[it.key]&&t.progress[it.key].s==='aprovado').length; return '<button class="cpill'+(x.id===ccid?' on':'')+'" style="'+ccStyle(x.id)+'" data-act="espCls" data-v="'+x.id+'" role="tab" aria-selected="'+(x.id===ccid)+'"><span class="d">'+(L.length&&dn===L.length?ic('check'):'')+'</span>'+x.name+' <small>'+dn+'/'+L.length+'</small>'+(x.id===memberClass(t)?'<span class="now">atual</span>':'')+'</button>';}).join('')+'</div>'+
     '<section class="card"><div class="card-h"><h3>Pedidas no cartão de '+esc(CLS[ccid].name)+'</h3><span class="muted small num">'+liDone+' de '+li.length+' cumpridos</span></div><p class="muted small" style="margin-bottom:12px">Quando a liderança aprova uma especialidade no caderno, o requisito do cartão ligado a ela é cumprido junto.</p><div class="stack" style="gap:8px">'+cardLinksHtml(t,ccid)+'</div></section>';
   else { const q=normTxt(App.espQ), af=App.espArea; const cat=ESP.filter(x=>(af==='all'||x.a===af)&&(!q||normTxt(x.n).indexOf(q)>=0||normTxt(x.c).indexOf(q)>=0));
     body='<section class="card"><div class="search" style="margin-bottom:10px"><label for="esearch" class="eyebrow" style="position:absolute;left:-9999px">Buscar especialidade</label>'+ic('search')+'<input id="esearch" class="input" data-inp="espQ" placeholder="Buscar por nome ou código" value="'+esc(App.espQ)+'"></div>'+

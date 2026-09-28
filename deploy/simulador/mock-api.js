@@ -123,8 +123,12 @@
     if (!birth) return 'amigo';
     const d = new Date(birth + 'T12:00:00'); if (isNaN(d)) return 'amigo';
     const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--;
-    return ['amigo', 'companheiro', 'pesquisador', 'pioneiro', 'excursionista', 'guia'][Math.max(0, Math.min(5, a - 10))];
+    return CLASS_IDS[Math.max(0, Math.min(5, a - 10))];
   }
+  const CLASS_IDS = ['amigo', 'companheiro', 'pesquisador', 'pioneiro', 'excursionista', 'guia'];
+  /* Requisito de classe que o desbravador ainda não alcançou: fica bloqueado. */
+  const ahead = (t, it) => { const cur = t.classId && CLASS_IDS.includes(t.classId) ? t.classId : classFor(userBy(t.userId).birth);
+    if (CLASS_IDS.indexOf(it.c) > CLASS_IDS.indexOf(cur)) throw forbid('Essa classe ainda não está liberada para este desbravador.'); return it; };
   const seatFree = (clubId) => {
     const s = subOf(clubId); if (!s || !s.planId || s.status === 'trial') return;
     const p = planBy(s.planId); if (!p || !p.maxMembers) return;
@@ -298,7 +302,7 @@
   });
   const card = (req, p) => { const x = ctx(req, p.id); const t = member(x.club, p.m); if (t.role !== 'desbravador') throw bad('Só desbravadores têm cartão de classe.'); return [x, t]; };
   on('PATCH', '/clubs/:id/members/:m/requirements/:k', (req, p) => {
-    const [x, t] = card(req, p); const it = item(decodeURIComponent(p.k)); if (!canCard(x, t)) throw forbid();
+    const [x, t] = card(req, p); const it = ahead(t, item(decodeURIComponent(p.k))); if (!canCard(x, t)) throw forbid();
     const cur = reqRow(t.id, p.k); const b = req.body || {};
     if (cur && cur.status === 'aprovado') throw bad('Esse requisito já foi aprovado.');
     if (cur && cur.status === 'enviado' && x.m && x.m.id === t.id) throw bad('Cancele o envio para editar.');
@@ -310,11 +314,13 @@
   });
   on('POST', '/clubs/:id/members/:m/requirements/approve', (req, p) => {
     const [x, t] = card(req, p); if (!canReview(x, t)) throw forbid();
-    const out = ((req.body || {}).keys || []).map((k) => { item(k); return upReq(t.id, k, { status: 'aprovado', comment: null, reviewedBy: x.user.id, reviewedAt: now() }, x.user.id); });
+    ((req.body || {}).keys || []).forEach((k) => ahead(t, item(k)));
+    const out = ((req.body || {}).keys || []).map((k) => {  return upReq(t.id, k, { status: 'aprovado', comment: null, reviewedBy: x.user.id, reviewedAt: now() }, x.user.id); });
     save(); return { requirements: out };
   });
   on('POST', '/clubs/:id/members/:m/requirements/:k/:act', (req, p) => {
     const [x, t] = card(req, p); const key = decodeURIComponent(p.k); const it = item(key); const cur = reqRow(t.id, key); let r;
+    if (p.act === 'submit' || p.act === 'approve') ahead(t, it);
     if (p.act === 'submit') {
       if (!canCard(x, t)) throw forbid();
       if (cur && (cur.status === 'enviado' || cur.status === 'aprovado')) throw bad('Esse requisito já foi enviado.');

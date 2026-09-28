@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { catalog, computeStats, ESP_REFS, isCustomSpecialty, ITEMS, SPECIALTIES, type CatalogItem } from '../catalog/index.js';
+import { ageOf, catalog, CLASS_IDS, classForAge, computeStats, ESP_REFS, isCustomSpecialty, ITEMS, SPECIALTIES, type CatalogItem } from '../catalog/index.js';
 import { audit, clubCtx, loadMember } from '../context.js';
 import type { Tx } from '../db/index.js';
 import { memberships, requirementProgress, specialtyProgress, users } from '../db/schema.js';
@@ -23,11 +23,16 @@ const EspPatch = z.object({
   customArea: z.enum(Object.keys(catalog.areas) as [string, ...string[]]).optional(),
 }).strict();
 
-function item(key: string): CatalogItem {
+function item(key: string, current?: string): CatalogItem {
   const it = ITEMS.get(key);
   if (!it) throw notFound('Requisito não existe no cartão.');
+  if (current && CLASS_IDS.indexOf(it.cls) > CLASS_IDS.indexOf(current)) throw forbidden('Essa classe ainda não está liberada para este desbravador.');
   return it;
 }
+
+/** Classe atual do desbravador: a escolhida pela liderança ou a da idade. */
+const currentClass = (m: { classId: string | null }, u: { birth: string | null }) =>
+  m.classId && CLASS_IDS.includes(m.classId) ? m.classId : classForAge(ageOf(u.birth));
 
 function checkEsp(id: string) {
   if (!SPECIALTIES.has(id) && !isCustomSpecialty(id)) throw notFound('Especialidade não existe no caderno.');
@@ -125,8 +130,8 @@ export async function progressRoutes(app: FastifyInstance) {
   /* ---------- requisitos de classe ---------- */
 
   app.patch(`${base}/requirements/:key`, async (req) => {
-    const { ctx, m } = await cardOwner(req);
-    const it = item((req.params as P).key);
+    const { ctx, m, u } = await cardOwner(req);
+    const it = item((req.params as P).key, currentClass(m, u));
     if (!canEditCard(ctx, m)) throw forbidden();
     const body = parse(ReqPatch, req.body);
     const cur = await getReq(db, m.id, it.key);
@@ -150,8 +155,8 @@ export async function progressRoutes(app: FastifyInstance) {
   });
 
   app.post(`${base}/requirements/:key/submit`, async (req) => {
-    const { ctx, m } = await cardOwner(req);
-    const it = item((req.params as P).key);
+    const { ctx, m, u } = await cardOwner(req);
+    const it = item((req.params as P).key, currentClass(m, u));
     if (!canEditCard(ctx, m)) throw forbidden();
     const cur = await getReq(db, m.id, it.key);
     if (cur?.status === 'enviado' || cur?.status === 'aprovado') throw badRequest('Esse requisito já foi enviado.');
@@ -170,8 +175,8 @@ export async function progressRoutes(app: FastifyInstance) {
   });
 
   app.post(`${base}/requirements/:key/approve`, async (req) => {
-    const { ctx, m } = await cardOwner(req);
-    const it = item((req.params as P).key);
+    const { ctx, m, u } = await cardOwner(req);
+    const it = item((req.params as P).key, currentClass(m, u));
     if (!canReview(ctx, m)) throw forbidden();
     const [r] = await db.transaction(async (tx) => {
       const out = await approveReqs(tx, ctx, m, [it.key]);
@@ -183,10 +188,10 @@ export async function progressRoutes(app: FastifyInstance) {
 
   /** Aprova vários de uma vez (ex.: uma seção inteira). */
   app.post(`${base}/requirements/approve`, async (req) => {
-    const { ctx, m } = await cardOwner(req);
+    const { ctx, m, u } = await cardOwner(req);
     if (!canReview(ctx, m)) throw forbidden();
     const keys = [...new Set(parse(BatchApprove, req.body).keys)];
-    keys.forEach(item);
+    keys.forEach((k) => item(k, currentClass(m, u)));
     const out = await db.transaction(async (tx) => {
       const rs = await approveReqs(tx, ctx, m, keys);
       await audit(tx, { clubId: ctx.club.id, actorId: ctx.user.id, action: 'requirement.approve', targetId: m.id, data: { keys } });

@@ -13,7 +13,7 @@ const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 const items = {}, espRefs = {}, espReqs = {};
 for (const s of cat.specialties) espReqs[s.id] = s.reqs.length;
 for (const it of cat.items) {
-  items[it.key] = it.o ? { o: 1, k: it.k || 1 } : {};
+  items[it.key] = it.o ? { c: it.cls, o: 1, k: it.k || 1 } : { c: it.cls };
   for (const id of it.esp || []) {
     const ix = it.o ? it.o.findIndex((o) => cat.espByName[norm(o)] === id) : -1;
     (espRefs[id] ||= []).push({ key: it.key, ix: espReqs[id] ? ix : -1 });
