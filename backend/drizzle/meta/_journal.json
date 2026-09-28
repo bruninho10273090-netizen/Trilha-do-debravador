@@ -15,6 +15,13 @@
       "when": 1790616548323,
       "tag": "0001_assinatura_marca_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790616883011,
+      "tag": "0002_planos_iniciais",
+      "breakpoints": true
     }
   ]
 }

@@ -91,14 +91,22 @@ Outras regras:
 ## Assinatura
 
 - Clube novo começa em **teste grátis** (`TRIAL_DAYS`, padrão 14 dias).
-- A plataforma cadastra os planos (`POST /admin/plans`: mensal ou anual, preço em centavos, limite de membros opcional).
+- A cobrança é **por clube**: cada clube tem a sua assinatura, paga pelo administrador dele.
+- Planos que já vêm cadastrados (migração `0002_planos_iniciais`):
+
+  | Plano | Preço | Equivale a |
+  |---|---|---|
+  | Mensal | R$ 13,49 por mês | |
+  | Anual | R$ 119,99 por ano | R$ 10,00 por mês, cerca de 26% mais barato |
+
+  Nenhum dos dois limita o número de membros. A plataforma pode mudar preços e criar outros planos (`POST /admin/plans`, `PATCH /admin/plans/:planId`); faturas já emitidas não mudam.
 - O administrador do clube escolhe o plano e informa nome, CPF/CNPJ e e-mail de cobrança (`POST /clubs/:clubId/subscription`). Isso gera uma fatura.
 - Quando a fatura é paga, o período avança um mês ou um ano (somando ao que ainda restava).
 - Estados: `trial`, `ativa`, `em_atraso` (até 5 dias depois do vencimento, ainda funciona), `cancelada` (funciona até o fim do período pago) e `expirada`.
 - **Com a assinatura vencida o clube fica só para leitura**: tudo continua visível, mas gravações respondem `402 subscription_inactive`. O administrador ainda consegue renovar, transferir e excluir.
 - Se o plano tem limite de membros, novas entradas acima do limite respondem 402.
 
-**Meio de pagamento:** por enquanto o provedor é `manual`. A fatura é registrada e a plataforma confirma o pagamento recebido (PIX, transferência) em `POST /admin/invoices/:id/paid`. Para cobrar automaticamente, implemente a interface `BillingProvider` em `src/billing/service.ts` com o gateway escolhido e chame `markInvoicePaid` no webhook dele.
+**Meio de pagamento:** ainda não escolhido; por enquanto o provedor é `manual`. A fatura é registrada e a plataforma confirma o pagamento recebido (PIX, transferência) em `POST /admin/invoices/:id/paid`. Para cobrar automaticamente, implemente a interface `BillingProvider` em `src/billing/service.ts` com o gateway escolhido e chame `markInvoicePaid` no webhook dele.
 
 ## Cores e logo
 

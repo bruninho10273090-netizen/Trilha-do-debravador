@@ -157,11 +157,19 @@ describe('cores e logo do clube', () => {
 });
 
 describe('assinatura', () => {
-  it('clube novo começa em teste; plataforma cria planos; clube escolhe e paga', async () => {
+  it('já vem com os planos mensal (R$ 13,49) e anual (R$ 119,99)', async () => {
+    const list = (await client(app()).get('/plans')).body.plans;
+    expect(list).toEqual([
+      expect.objectContaining({ code: 'mensal', interval: 'mensal', priceCents: 1349, currency: 'BRL', maxMembers: null }),
+      expect.objectContaining({ code: 'anual', interval: 'anual', priceCents: 11999, currency: 'BRL', maxMembers: null }),
+    ]);
+  });
+
+  it('clube novo começa em teste; clube escolhe o plano e paga', async () => {
     const admin = await platformAdmin();
-    const mensal = (await admin.post('/admin/plans', { code: 'mensal', name: 'Mensal', interval: 'mensal', priceCents: 2990 })).body.plan;
-    const anual = (await admin.post('/admin/plans', { code: 'anual', name: 'Anual', interval: 'anual', priceCents: 29900 })).body.plan;
-    expect((await client(app()).get('/plans')).body.plans.map((p: { code: string }) => p.code)).toEqual(['mensal', 'anual']);
+    const plans = (await client(app()).get('/plans')).body.plans;
+    const mensal = plans.find((p: { code: string }) => p.code === 'mensal');
+    const anual = plans.find((p: { code: string }) => p.code === 'anual');
 
     const { owner, club, created, code } = await newClub('Clube Pagante');
     expect(created.subscription).toMatchObject({ state: 'trial', active: true });
@@ -174,7 +182,7 @@ describe('assinatura', () => {
     expect(badDoc.status).toBe(400);
     const co = await owner.post(`/clubs/${club.id}/subscription`, { planId: anual.id, billingName: 'Igreja Central', billingDocument: CPF, billingEmail: 'tesouraria@igreja.org' });
     expect(co.status).toBe(201);
-    expect(co.body.invoice).toMatchObject({ status: 'pendente', amountCents: 29900 });
+    expect(co.body.invoice).toMatchObject({ status: 'pendente', amountCents: 11999 });
 
     // trocar de plano cancela a fatura anterior
     const co2 = await owner.post(`/clubs/${club.id}/subscription`, { planId: mensal.id, billingName: 'Igreja Central', billingDocument: CPF, billingEmail: 'tesouraria@igreja.org' });
@@ -189,6 +197,7 @@ describe('assinatura', () => {
     const days = (new Date(sub.subscription.currentPeriodEnd).getTime() - Date.now()) / 864e5;
     expect(days).toBeGreaterThan(27);
     expect(days).toBeLessThan(32);
+    expect(paid.body.invoice.amountCents).toBe(1349);
 
     const cancel = await owner.post(`/clubs/${club.id}/subscription/cancel`);
     expect(cancel.body.subscription).toMatchObject({ state: 'cancelada', active: true });
