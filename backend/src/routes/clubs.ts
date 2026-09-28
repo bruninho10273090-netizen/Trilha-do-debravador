@@ -1,14 +1,16 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { randomInt } from 'node:crypto';
 import { z } from 'zod';
+import { assertActive, assertMemberRoom, getSubscription } from '../billing/service.js';
+import { subscriptionState } from '../billing/state.js';
 import { ageOf, classForAge } from '../catalog/index.js';
-import { assertUnit, audit, clubCtx, requireUser } from '../context.js';
-import type { Tx } from '../db/index.js';
-import { clubs, DEFAULT_CLUB_SETTINGS, memberships, units } from '../db/schema.js';
+import { assertUnit, audit, clubCtx, loadMember, requireUser } from '../context.js';
+import { clubLogos, clubs, DEFAULT_CLUB_SETTINGS, memberships, subscriptions, units, users, type Club } from '../db/schema.js';
 import { badRequest, conflict, forbidden, isUniqueViolation, notFound } from '../lib/errors.js';
 import { parse, Uuid } from '../lib/validate.js';
-import { can } from '../permissions.js';
+import { can, isOwner, LEADER_ROLES } from '../permissions.js';
+import { resolveTheme } from '../theme.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const newJoinCode = () => Array.from({ length: 8 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join('');
@@ -30,18 +32,24 @@ const Join = z.object({
   role: z.enum(['desbravador', 'conselheiro', 'instrutor', 'associado']).default('desbravador'),
   unitId: Uuid.nullable().optional(),
 });
+const Transfer = z.object({ memberId: Uuid });
 const UnitBody = z.object({ name: z.string().trim().min(1).max(40), color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional() });
 
-/** Quantos diretores ativos sobram se `exceptId` sair ou mudar de papel. */
-export async function otherActiveDirectors(db: Tx, clubId: string, exceptId: string) {
-  const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(memberships).where(and(
-    eq(memberships.clubId, clubId), eq(memberships.role, 'diretor'), eq(memberships.status, 'ativo'), ne(memberships.id, exceptId)));
-  return r.n;
+/** Endereço do logo com a versão no fim, para o navegador trocar a imagem quando ela mudar. */
+export async function logoUrl(db: FastifyInstance['db'], clubId: string) {
+  const [l] = await db.select({ sha: clubLogos.sha256 }).from(clubLogos).where(eq(clubLogos.clubId, clubId)).limit(1);
+  return l ? `/api/clubs/${clubId}/logo?v=${l.sha.slice(0, 12)}` : null;
+}
+
+/** Dados de marca que qualquer pessoa pode ver (usados também na tela de login do clube). */
+export async function branding(db: FastifyInstance['db'], club: Club) {
+  return { theme: resolveTheme(club.theme), customTheme: club.theme, logoUrl: await logoUrl(db, club.id) };
 }
 
 export async function clubRoutes(app: FastifyInstance) {
-  const { db } = app;
+  const { db, config } = app;
 
+  /** Qualquer pessoa cadastrada pode criar clubes; quem cria é o administrador e ganha o período de teste. */
   app.post('/clubs', { config: { rateLimit: { max: 10, timeWindow: '1 hour' } } }, async (req, reply) => {
     const user = requireUser(req);
     const body = parse(CreateClub, req.body);
@@ -52,13 +60,16 @@ export async function clubRoutes(app: FastifyInstance) {
         const out = await db.transaction(async (tx) => {
           const [club] = await tx.insert(clubs).values({
             name: body.name, church: body.church ?? null, region: body.region ?? null,
-            slug, joinCode: newJoinCode(), createdBy: user.id,
+            slug, joinCode: newJoinCode(), ownerId: user.id, createdBy: user.id,
           }).returning();
           const [m] = await tx.insert(memberships).values({
             clubId: club.id, userId: user.id, role: 'diretor', status: 'ativo', approvedAt: new Date(),
           }).returning();
+          const [sub] = await tx.insert(subscriptions).values({
+            clubId: club.id, status: 'trial', trialEndsAt: new Date(Date.now() + config.trialDays * 864e5),
+          }).returning();
           await audit(tx, { clubId: club.id, actorId: user.id, action: 'club.create', targetId: club.id });
-          return { club, membership: m };
+          return { club, membership: m, subscription: { ...sub, ...subscriptionState(sub) } };
         });
         return reply.status(201).send(out);
       } catch (e) {
@@ -71,9 +82,15 @@ export async function clubRoutes(app: FastifyInstance) {
   app.get('/clubs/:clubId', async (req) => {
     const ctx = await clubCtx(req, (req.params as { clubId: string }).clubId);
     const us = await db.select().from(units).where(eq(units.clubId, ctx.club.id)).orderBy(units.name);
-    const { joinCode, ...club } = ctx.club;
+    const [owner] = await db.select({ id: users.id, name: users.name, username: users.username }).from(users).where(eq(users.id, ctx.club.ownerId));
+    const sub = await getSubscription(db, ctx.club.id);
+    const { joinCode, theme, ...club } = ctx.club;
     return {
       club: { ...club, joinCode: can(ctx, 'club.joinCode') ? joinCode : undefined },
+      admin: owner,
+      isAdmin: isOwner(ctx),
+      subscription: subscriptionState(sub),
+      branding: await branding(db, ctx.club),
       units: us,
       membership: ctx.membership,
     };
@@ -91,12 +108,25 @@ export async function clubRoutes(app: FastifyInstance) {
   });
 
   app.delete('/clubs/:clubId', async (req, reply) => {
-    const ctx = await clubCtx(req, (req.params as { clubId: string }).clubId, 'club.delete');
+    const ctx = await clubCtx(req, (req.params as { clubId: string }).clubId, 'club.delete', { allowInactive: true });
     const body = parse(DeleteClub, req.body);
     if (body.confirm !== ctx.club.name) throw badRequest('Digite o nome exato do clube para confirmar.');
     await db.delete(clubs).where(eq(clubs.id, ctx.club.id));
     await audit(db, { actorId: ctx.user.id, action: 'club.delete', targetId: ctx.club.id, data: { name: ctx.club.name } });
     return reply.status(204).send();
+  });
+
+  /** Passa a administração do clube para outro membro ativo da liderança. */
+  app.post('/clubs/:clubId/transfer', async (req) => {
+    const ctx = await clubCtx(req, (req.params as { clubId: string }).clubId, 'club.transfer', { allowInactive: true });
+    const { memberId } = parse(Transfer, req.body);
+    const { m, u } = await loadMember(db, ctx.club.id, memberId);
+    if (u.id === ctx.club.ownerId) throw badRequest('Essa pessoa já é a administradora do clube.');
+    if (m.status !== 'ativo') throw badRequest('Só um membro ativo pode receber a administração.');
+    if (!LEADER_ROLES.includes(m.role)) throw badRequest('A administração só pode ir para alguém da liderança.');
+    const [club] = await db.update(clubs).set({ ownerId: u.id, updatedAt: new Date() }).where(eq(clubs.id, ctx.club.id)).returning();
+    await audit(db, { clubId: club.id, actorId: ctx.user.id, action: 'club.transfer', targetId: m.id, data: { from: ctx.club.ownerId, to: u.id } });
+    return { admin: { id: u.id, name: u.name, username: u.username } };
   });
 
   app.post('/clubs/:clubId/join-code', async (req) => {
@@ -113,6 +143,8 @@ export async function clubRoutes(app: FastifyInstance) {
     const body = parse(Join, req.body);
     const [club] = await db.select().from(clubs).where(eq(clubs.joinCode, body.code)).limit(1);
     if (!club) throw notFound('Código de clube não encontrado.');
+    await assertActive(db, club.id);
+    await assertMemberRoom(db, club.id);
     await assertUnit(db, club.id, body.unitId);
     const kid = body.role === 'desbravador';
     const settings = { ...DEFAULT_CLUB_SETTINGS, ...club.settings };
@@ -134,14 +166,13 @@ export async function clubRoutes(app: FastifyInstance) {
   app.post('/clubs/:clubId/leave', async (req, reply) => {
     const user = requireUser(req);
     const clubId = parse(Uuid, (req.params as { clubId: string }).clubId);
-    const [m] = await db.select().from(memberships)
+    const [row] = await db.select({ m: memberships, ownerId: clubs.ownerId }).from(memberships)
+      .innerJoin(clubs, eq(clubs.id, memberships.clubId))
       .where(and(eq(memberships.clubId, clubId), eq(memberships.userId, user.id))).limit(1);
-    if (!m) throw notFound('Você não faz parte deste clube.');
-    if (m.role === 'diretor' && m.status === 'ativo' && (await otherActiveDirectors(db, clubId, m.id)) === 0) {
-      throw forbidden('Você é o único diretor. Passe a direção para outra pessoa antes de sair.');
-    }
-    await db.delete(memberships).where(eq(memberships.id, m.id));
-    await audit(db, { clubId, actorId: user.id, action: 'member.leave', targetId: m.id });
+    if (!row) throw notFound('Você não faz parte deste clube.');
+    if (row.ownerId === user.id) throw forbidden('Você é o administrador. Passe a administração para outra pessoa antes de sair.');
+    await db.delete(memberships).where(eq(memberships.id, row.m.id));
+    await audit(db, { clubId, actorId: user.id, action: 'member.leave', targetId: row.m.id });
     return reply.status(204).send();
   });
 

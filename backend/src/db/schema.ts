@@ -1,12 +1,19 @@
 import { sql } from 'drizzle-orm';
 import {
-  boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+  boolean, customType, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
+import type { ClubTheme } from '../theme.js';
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
 
 export const roleEnum = pgEnum('role', ['diretor', 'associado', 'conselheiro', 'instrutor', 'desbravador']);
 export const membershipStatusEnum = pgEnum('membership_status', ['pendente', 'ativo', 'inativo']);
 export const reqStatusEnum = pgEnum('req_status', ['enviado', 'aprovado', 'devolvido']);
 export const espStatusEnum = pgEnum('esp_status', ['andamento', 'enviado', 'aprovado', 'devolvido']);
+export const planIntervalEnum = pgEnum('plan_interval', ['mensal', 'anual']);
+/** Status gravado; o estado efetivo (em atraso, expirada) é calculado em billing/state.ts. */
+export const subscriptionStatusEnum = pgEnum('subscription_status', ['trial', 'ativa', 'cancelada']);
+export const invoiceStatusEnum = pgEnum('invoice_status', ['pendente', 'paga', 'cancelada', 'estornada']);
 
 const now = () => timestamp({ withTimezone: true }).notNull().defaultNow();
 
@@ -17,6 +24,11 @@ export const users = pgTable('users', {
   name: text().notNull(),
   email: text(),
   birth: date(),
+  phone: text(),
+  city: text(),
+  state: text(),
+  guardianName: text('guardian_name'),
+  guardianPhone: text('guardian_phone'),
   passwordHash: text('password_hash').notNull(),
   isPlatformAdmin: boolean('is_platform_admin').notNull().default(false),
   disabledAt: timestamp('disabled_at', { withTimezone: true }),
@@ -56,10 +68,75 @@ export const clubs = pgTable('clubs', {
   church: text(),
   region: text(),
   settings: jsonb().$type<ClubSettings>().notNull().default(DEFAULT_CLUB_SETTINGS),
+  theme: jsonb().$type<Partial<ClubTheme>>().notNull().default({}),
+  /** Administrador do clube: quem criou, até passar para outra pessoa. Responde pela assinatura. */
+  ownerId: uuid('owner_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: now(),
   updatedAt: now(),
 });
+
+/** Logo do clube guardado no próprio banco (PNG, JPEG ou WebP, tamanho limitado). */
+export const clubLogos = pgTable('club_logos', {
+  clubId: uuid('club_id').primaryKey().references(() => clubs.id, { onDelete: 'cascade' }),
+  contentType: text('content_type').notNull(),
+  data: bytea().notNull(),
+  size: integer().notNull(),
+  sha256: text().notNull(),
+  updatedAt: now(),
+});
+
+/* ---------- assinatura ---------- */
+
+export const plans = pgTable('plans', {
+  id: uuid().primaryKey().defaultRandom(),
+  code: text().notNull().unique(),
+  name: text().notNull(),
+  interval: planIntervalEnum().notNull(),
+  priceCents: integer('price_cents').notNull(),
+  currency: text().notNull().default('BRL'),
+  /** Limite de membros (ativos + pendentes) por clube; null = sem limite. */
+  maxMembers: integer('max_members'),
+  active: boolean().notNull().default(true),
+  createdAt: now(),
+});
+
+/** Uma assinatura por clube. */
+export const subscriptions = pgTable('subscriptions', {
+  id: uuid().primaryKey().defaultRandom(),
+  clubId: uuid('club_id').notNull().unique().references(() => clubs.id, { onDelete: 'cascade' }),
+  planId: uuid('plan_id').references(() => plans.id, { onDelete: 'restrict' }),
+  status: subscriptionStatusEnum().notNull().default('trial'),
+  trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+  currentPeriodStart: timestamp('current_period_start', { withTimezone: true }),
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  billingName: text('billing_name'),
+  billingDocument: text('billing_document'),
+  billingEmail: text('billing_email'),
+  provider: text().notNull().default('manual'),
+  providerCustomerId: text('provider_customer_id'),
+  providerSubscriptionId: text('provider_subscription_id'),
+  createdAt: now(),
+  updatedAt: now(),
+});
+
+export const invoices = pgTable('invoices', {
+  id: uuid().primaryKey().defaultRandom(),
+  subscriptionId: uuid('subscription_id').notNull().references(() => subscriptions.id, { onDelete: 'cascade' }),
+  planId: uuid('plan_id').notNull().references(() => plans.id, { onDelete: 'restrict' }),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text().notNull().default('BRL'),
+  status: invoiceStatusEnum().notNull().default('pendente'),
+  dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  periodStart: timestamp('period_start', { withTimezone: true }),
+  periodEnd: timestamp('period_end', { withTimezone: true }),
+  provider: text().notNull().default('manual'),
+  providerRef: text('provider_ref'),
+  paymentUrl: text('payment_url'),
+  createdAt: now(),
+}, (t) => [index('invoices_sub_idx').on(t.subscriptionId, t.createdAt)]);
 
 export const units = pgTable('units', {
   id: uuid().primaryKey().defaultRandom(),
@@ -140,3 +217,6 @@ export type Role = (typeof roleEnum.enumValues)[number];
 export type User = typeof users.$inferSelect;
 export type Club = typeof clubs.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
+export type Plan = typeof plans.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type Invoice = typeof invoices.$inferSelect;

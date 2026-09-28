@@ -109,11 +109,13 @@ describe('clubes e convites', () => {
 });
 
 describe('gestão de membros', () => {
-  it('o clube nunca fica sem diretor', async () => {
+  it('o administrador não sai nem é removido sem passar a administração', async () => {
     const { dir, club } = await clubWithKid();
     const myM = (await dir.get(`/clubs/${club.id}`)).body.membership;
     expect((await dir.post(`/clubs/${club.id}/leave`)).status).toBe(403);
-    expect((await dir.patch(`/clubs/${club.id}/members/${myM.id}`, { role: 'associado' })).status).toBe(403);
+    expect((await dir.patch(`/clubs/${club.id}/members/${myM.id}`, { status: 'inativo' })).status).toBe(403);
+    // o administrador pode mudar a própria função
+    expect((await dir.patch(`/clubs/${club.id}/members/${myM.id}`, { role: 'associado' })).body.member.role).toBe('associado');
   });
 
   it('associado administra, mas não mexe em diretor', async () => {

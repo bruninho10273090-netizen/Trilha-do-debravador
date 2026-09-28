@@ -4,13 +4,13 @@ import { z } from 'zod';
 import { hashPassword } from '../auth/password.js';
 import { deleteUserSessions } from '../auth/session.js';
 import { ageOf, CLASS_IDS, classForAge } from '../catalog/index.js';
+import { assertMemberRoom } from '../billing/service.js';
 import { assertUnit, audit, clubCtx, loadMember, memberView } from '../context.js';
 import { auditLog, memberships, units, users, type Membership } from '../db/schema.js';
 import { badRequest, conflict, forbidden, isUniqueViolation } from '../lib/errors.js';
-import { BirthDate, parse, Password, PersonName, Username, Uuid } from '../lib/validate.js';
+import { BirthDate, parse, Password, PersonName, ProfileFields, Username, Uuid } from '../lib/validate.js';
 import { can, canManageMember, ROLES } from '../permissions.js';
 import { statsFor } from '../services/stats.js';
-import { otherActiveDirectors } from './clubs.js';
 
 const Role = z.enum(ROLES as [string, ...string[]]).transform((r) => r as Membership['role']);
 const ClassId = z.enum(CLASS_IDS as [string, ...string[]]);
@@ -23,7 +23,9 @@ const ListQuery = z.object({
 const CreateMember = z.object({
   username: Username, name: PersonName, password: Password, role: Role,
   unitId: Uuid.nullable().optional(), birth: BirthDate.optional(), classId: ClassId.optional(),
+  email: z.email().max(200).transform((e) => e.toLowerCase()).optional(), ...ProfileFields,
 });
+const UpdateProfile = z.object({ name: PersonName.optional(), birth: BirthDate.nullable().optional(), ...ProfileFields }).strict();
 const UpdateMember = z.object({
   role: Role.optional(),
   status: z.enum(['ativo', 'inativo']).optional(),
@@ -55,7 +57,7 @@ export async function memberRoutes(app: FastifyInstance) {
     return {
       members: rows.map(({ m, u }) => {
         const s = stats.get(m.id);
-        const base = full ? memberView(m, u)
+        const base = full ? memberView(m, u, ctx.club.ownerId)
           : { id: m.id, name: u.name, username: u.username, role: m.role, status: m.status, unitId: m.unitId, classId: m.classId };
         return { ...base, stats: s ? { xp: s.xp, level: s.level, title: s.title, approved: s.approved, pending: s.pending, espDone: s.espDone } : null };
       }),
@@ -70,14 +72,14 @@ export async function memberRoutes(app: FastifyInstance) {
       throw forbidden('Só o diretor pode cadastrar outro diretor.');
     }
     await assertUnit(db, ctx.club.id, body.unitId);
+    await assertMemberRoom(db, ctx.club.id);
+    const { password, role, unitId, classId, ...person } = body;
     try {
       const out = await db.transaction(async (tx) => {
-        const [u] = await tx.insert(users).values({
-          username: body.username, name: body.name, birth: body.birth ?? null, passwordHash: await hashPassword(body.password),
-        }).returning();
+        const [u] = await tx.insert(users).values({ ...person, passwordHash: await hashPassword(password) }).returning();
         const [m] = await tx.insert(memberships).values({
-          clubId: ctx.club.id, userId: u.id, role: body.role, status: 'ativo', unitId: body.unitId ?? null,
-          classId: body.role === 'desbravador' ? (body.classId ?? classForAge(ageOf(body.birth))) : null,
+          clubId: ctx.club.id, userId: u.id, role, status: 'ativo', unitId: unitId ?? null,
+          classId: role === 'desbravador' ? (classId ?? classForAge(ageOf(body.birth))) : null,
           approvedBy: ctx.user.id, approvedAt: new Date(),
         }).returning();
         await audit(tx, { clubId: ctx.club.id, actorId: ctx.user.id, action: 'member.create', targetId: m.id, data: { username: u.username, role: m.role } });
@@ -97,7 +99,7 @@ export async function memberRoutes(app: FastifyInstance) {
     const self = ctx.membership?.id === m.id;
     if (!self && !can(ctx, 'members.viewAll')) throw forbidden();
     const s = m.role === 'desbravador' ? (await statsFor(db, { membershipIds: [m.id] })).get(m.id) : null;
-    return { member: { ...memberView(m, u), stats: s ?? null } };
+    return { member: { ...memberView(m, u, ctx.club.ownerId), stats: s ?? null } };
   });
 
   app.patch('/clubs/:clubId/members/:memberId', async (req) => {
@@ -115,11 +117,7 @@ export async function memberRoutes(app: FastifyInstance) {
     if (m.status === 'pendente' && body.status) throw badRequest('Use a rota de aprovação para contas pendentes.');
     await assertUnit(db, ctx.club.id, body.unitId);
 
-    const losesDirector = m.role === 'diretor' && m.status === 'ativo' &&
-      ((body.role && body.role !== 'diretor') || body.status === 'inativo');
-    if (losesDirector && (await otherActiveDirectors(db, ctx.club.id, m.id)) === 0) {
-      throw forbidden('O clube precisa de pelo menos um diretor ativo.');
-    }
+    if (u.id === ctx.club.ownerId && body.status === 'inativo') throw forbidden('O administrador do clube não pode ficar inativo.');
 
     const role = body.role ?? m.role;
     const classId = role !== 'desbravador' ? null
@@ -128,8 +126,31 @@ export async function memberRoutes(app: FastifyInstance) {
       .set({ role, status: body.status, unitId: body.unitId, classId, updatedAt: new Date() })
       .where(eq(memberships.id, m.id)).returning();
     await audit(db, { clubId: ctx.club.id, actorId: ctx.user.id, action: 'member.update', targetId: m.id, data: body });
-    return { member: memberView(updated, u) };
+    return { member: memberView(updated, u, ctx.club.ownerId) };
   });
+
+  /**
+   * Diretoria corrige o cadastro da pessoa (telefone, responsável...). Como a conta é
+   * de todos os clubes em que ela está, só vale para quem participa apenas deste clube.
+   */
+  app.patch('/clubs/:clubId/members/:memberId/profile', async (req) => {
+    const p = req.params as P;
+    const ctx = await clubCtx(req, p.clubId, 'members.manage');
+    const body = parse(UpdateProfile, req.body);
+    const { m, u } = await loadMember(db, ctx.club.id, p.memberId);
+    if (!canManageMember(ctx, m)) throw forbidden();
+    if (u.id !== ctx.user.id) await assertOnlyThisClub(u.id, ctx.club.id, ctx.user.isPlatformAdmin);
+    const [nu] = await db.update(users).set({ ...body, updatedAt: new Date() }).where(eq(users.id, u.id)).returning();
+    await audit(db, { clubId: ctx.club.id, actorId: ctx.user.id, action: 'member.profile.update', targetId: m.id, data: Object.keys(body) });
+    return { member: memberView(m, nu, ctx.club.ownerId) };
+  });
+
+  async function assertOnlyThisClub(userId: string, clubId: string, platformAdmin: boolean) {
+    if (platformAdmin) return;
+    const [others] = await db.select({ n: sql<number>`count(*)::int` }).from(memberships)
+      .where(and(eq(memberships.userId, userId), ne(memberships.clubId, clubId)));
+    if (others.n > 0) throw forbidden('Essa pessoa participa de outros clubes; ela mesma precisa alterar esses dados.');
+  }
 
   app.post('/clubs/:clubId/members/:memberId/approve', async (req) => {
     const p = req.params as P;
@@ -141,7 +162,7 @@ export async function memberRoutes(app: FastifyInstance) {
       .set({ status: 'ativo', approvedBy: ctx.user.id, approvedAt: new Date(), updatedAt: new Date() })
       .where(eq(memberships.id, m.id)).returning();
     await audit(db, { clubId: ctx.club.id, actorId: ctx.user.id, action: 'member.approve', targetId: m.id });
-    return { member: memberView(updated, u) };
+    return { member: memberView(updated, u, ctx.club.ownerId) };
   });
 
   /** Remove o vínculo (ou recusa um pedido pendente). A conta da pessoa continua existindo. */
@@ -150,10 +171,8 @@ export async function memberRoutes(app: FastifyInstance) {
     const ctx = await clubCtx(req, p.clubId, 'members.manage');
     const { m } = await loadMember(db, ctx.club.id, p.memberId);
     if (ctx.membership?.id === m.id) throw badRequest('Para sair do clube, use a opção Sair.');
+    if (m.userId === ctx.club.ownerId) throw forbidden('O administrador do clube não pode ser removido. Transfira a administração antes.');
     if (!canManageMember(ctx, m)) throw forbidden();
-    if (m.role === 'diretor' && m.status === 'ativo' && (await otherActiveDirectors(db, ctx.club.id, m.id)) === 0) {
-      throw forbidden('O clube precisa de pelo menos um diretor ativo.');
-    }
     await db.delete(memberships).where(eq(memberships.id, m.id));
     await audit(db, { clubId: ctx.club.id, actorId: ctx.user.id, action: m.status === 'pendente' ? 'member.reject' : 'member.remove', targetId: m.id });
     return reply.status(204).send();
@@ -169,9 +188,7 @@ export async function memberRoutes(app: FastifyInstance) {
     const body = parse(ResetPassword, req.body);
     const { m, u } = await loadMember(db, ctx.club.id, p.memberId);
     if (!canManageMember(ctx, m) || u.id === ctx.user.id) throw forbidden();
-    const [others] = await db.select({ n: sql<number>`count(*)::int` }).from(memberships)
-      .where(and(eq(memberships.userId, u.id), ne(memberships.clubId, ctx.club.id)));
-    if (others.n > 0 && !ctx.user.isPlatformAdmin) throw forbidden('Essa pessoa participa de outros clubes; ela mesma precisa trocar a senha.');
+    await assertOnlyThisClub(u.id, ctx.club.id, ctx.user.isPlatformAdmin);
     if (u.isPlatformAdmin && !ctx.user.isPlatformAdmin) throw forbidden();
     await db.update(users).set({ passwordHash: await hashPassword(body.password), updatedAt: new Date() }).where(eq(users.id, u.id));
     await deleteUserSessions(db, u.id);

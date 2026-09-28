@@ -16,7 +16,7 @@ Dentro do Claude, o app salva os dados no banco compartilhado do artefato (`wind
 
 ## Backend
 
-A pasta [`backend/`](backend/README.md) tem a API com contas de acesso, permissões por papel e vários clubes (Node + TypeScript + Fastify + PostgreSQL). Para subir tudo:
+A pasta [`backend/`](backend/README.md) tem a API do serviço por assinatura: cadastro de pessoas, clubes com administrador e funções, cores e logo por clube, planos mensal e anual (Node + TypeScript + Fastify + PostgreSQL). Para subir tudo:
 
 ```sh
 docker compose up --build

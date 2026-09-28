@@ -6,16 +6,18 @@ import { createSession, deleteSession, deleteUserSessions } from '../auth/sessio
 import { publicUser, requireUser } from '../context.js';
 import { clubs, memberships, users } from '../db/schema.js';
 import { badRequest, conflict, isUniqueViolation, unauthorized } from '../lib/errors.js';
-import { BirthDate, parse, Password, PersonName, Username } from '../lib/validate.js';
+import { BirthDate, parse, Password, PersonName, ProfileFields, Username } from '../lib/validate.js';
 
 const Email = z.email().max(200).transform((e) => e.toLowerCase());
 
 const Register = z.object({
   username: Username, name: PersonName, password: Password,
-  email: Email.optional(), birth: BirthDate.optional(),
+  email: Email.optional(), birth: BirthDate.optional(), ...ProfileFields,
 });
 const Login = z.object({ username: z.string().trim().toLowerCase().min(1).max(200), password: z.string().min(1).max(200) });
-const UpdateMe = z.object({ name: PersonName.optional(), email: Email.nullable().optional(), birth: BirthDate.nullable().optional() });
+const UpdateMe = z.object({
+  name: PersonName.optional(), email: Email.nullable().optional(), birth: BirthDate.nullable().optional(), ...ProfileFields,
+}).strict();
 const ChangePassword = z.object({ current: z.string().min(1), password: Password });
 
 const authLimit = { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } };
@@ -27,10 +29,8 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/auth/register', authLimit, async (req, reply) => {
     const body = parse(Register, req.body);
     try {
-      const [user] = await db.insert(users).values({
-        username: body.username, name: body.name, email: body.email ?? null, birth: body.birth ?? null,
-        passwordHash: await hashPassword(body.password),
-      }).returning();
+      const { password, ...data } = body;
+      const [user] = await db.insert(users).values({ ...data, passwordHash: await hashPassword(password) }).returning();
       const s = await createSession(db, user.id, config.sessionDays, meta(req));
       return reply.status(201).send({ token: s.token, expiresAt: s.expiresAt, user: publicUser(user) });
     } catch (e) {
@@ -66,6 +66,7 @@ export async function authRoutes(app: FastifyInstance) {
       user: publicUser(user),
       clubs: rows.map(({ m, c }) => ({
         membershipId: m.id, role: m.role, status: m.status, unitId: m.unitId, classId: m.classId,
+        isAdmin: c.ownerId === user.id,
         club: { id: c.id, name: c.name, slug: c.slug },
       })),
     };

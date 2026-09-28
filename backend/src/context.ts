@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import type { FastifyRequest } from 'fastify';
+import { assertActive } from './billing/service.js';
 import type { Tx } from './db/index.js';
 import { auditLog, clubs, memberships, units, users, type Membership, type User } from './db/schema.js';
 import { forbidden, notFound, unauthorized } from './lib/errors.js';
@@ -13,9 +14,10 @@ export function requireUser(req: FastifyRequest): User {
 
 /**
  * Carrega o clube e o vínculo de quem chama. Quem não é membro ativo recebe 404,
- * para não revelar que o clube existe.
+ * para não revelar que o clube existe. Gravações (tudo que não é GET) exigem a
+ * assinatura em dia, exceto nas rotas marcadas com `allowInactive` (renovar, sair...).
  */
-export async function clubCtx(req: FastifyRequest, clubId: unknown, perm: Permission = 'club.view'): Promise<ClubCtx> {
+export async function clubCtx(req: FastifyRequest, clubId: unknown, perm: Permission = 'club.view', opts: { allowInactive?: boolean } = {}): Promise<ClubCtx> {
   const user = requireUser(req);
   const id = parse(Uuid, clubId);
   const db = req.server.db;
@@ -26,6 +28,7 @@ export async function clubCtx(req: FastifyRequest, clubId: unknown, perm: Permis
   const ctx: ClubCtx = { user, club, membership: membership ?? null };
   if (!can(ctx, 'club.view')) throw notFound('Clube não encontrado.');
   if (!can(ctx, perm)) throw forbidden();
+  if (req.method !== 'GET' && !opts.allowInactive && !user.isPlatformAdmin) await assertActive(db, club.id);
   return ctx;
 }
 
@@ -51,13 +54,19 @@ export async function audit(db: Tx, e: { clubId?: string | null; actorId?: strin
   });
 }
 
+const profile = (u: User) => ({
+  phone: u.phone, city: u.city, state: u.state, guardianName: u.guardianName, guardianPhone: u.guardianPhone,
+});
+
 export const publicUser = (u: User) => ({
-  id: u.id, username: u.username, name: u.name, email: u.email, birth: u.birth,
+  id: u.id, username: u.username, name: u.name, email: u.email, birth: u.birth, ...profile(u),
   isPlatformAdmin: u.isPlatformAdmin, createdAt: u.createdAt,
 });
 
-export const memberView = (m: Membership, u: User) => ({
-  id: m.id, clubId: m.clubId, userId: u.id, username: u.username, name: u.name, birth: u.birth,
-  role: m.role, status: m.status, unitId: m.unitId, classId: m.classId,
+/** Visão completa de um membro, para a liderança (inclui contato e responsável). */
+export const memberView = (m: Membership, u: User, ownerId?: string) => ({
+  id: m.id, clubId: m.clubId, userId: u.id, username: u.username, name: u.name, birth: u.birth, email: u.email,
+  ...profile(u), role: m.role, status: m.status, unitId: m.unitId, classId: m.classId,
+  isAdmin: ownerId ? u.id === ownerId : undefined,
   approvedAt: m.approvedAt, createdAt: m.createdAt,
 });
