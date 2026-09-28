@@ -120,7 +120,8 @@ svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
 .stack{display:grid;gap:16px;align-content:start;min-width:0}
 .cols{display:grid;gap:16px;grid-template-columns:minmax(0,7fr) minmax(0,5fr);align-items:start}
-@media(max-width:880px){.cols{grid-template-columns:minmax(0,1fr)}}
+.cols.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media(max-width:880px){.cols,.cols.even{grid-template-columns:minmax(0,1fr)}}
 .page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .page-head p{margin-top:4px}
 .empty{text-align:center;padding:28px 12px;color:var(--muted)}
@@ -833,7 +834,7 @@ const Store={
   get mode(){return this.demo?'demo':this.base;},
   async init(){
     let db=null;
-    try{ if(window.claude&&typeof window.claude.use==='function') db=await window.claude.use('db'); }catch(e){db=null;}
+    try{ if(!window.__TRILHA_SIM__&&window.claude&&typeof window.claude.use==='function') db=await window.claude.use('db'); }catch(e){db=null;}
     if(db){ this.db=db; this.base='cloud'; this.listen(); }
     else if(await probeApi()){ this.base='api'; await Srv.boot(); }
     else this.goLocal();
@@ -1856,7 +1857,7 @@ function renderClubs(){
   const body='<div class="page-head"><div><p class="eyebrow">'+greet()+', '+esc(firstName(u.name))+'</p><h1>Meus clubes</h1></div>'+(u.isPlatformAdmin?'<button class="btn gold" data-act="platOpen">'+ic('sliders')+'Painel da plataforma</button>':'')+'</div>'+
    (Srv.pub&&Srv.invite?'<div class="mode-note">'+ic('users')+'<span>Convite do <b>'+esc(Srv.pub.club.name)+'</b>: o código já está preenchido abaixo. Escolha se você é desbravador ou da liderança e toque em Entrar no clube.</span></div>':'')+
    '<section class="card">'+(list.length?'<div class="list">'+rows+'</div>':'<div class="empty"><strong>Você ainda não está em nenhum clube.</strong>Entre com o código que a diretoria do seu clube passou, ou crie um clube novo.</div>')+'</section>'+
-   '<div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">'+
+   '<div class="cols even">'+
     '<section class="card"><div class="card-h"><h3>Entrar em um clube</h3></div><form data-form="joinClub" style="display:grid;gap:14px">'+
      '<div class="field"><label for="jc-code">Código de convite</label><input id="jc-code" name="code" class="input" required autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="Ex.: K7M2Q9XA" value="'+esc(Srv.invite||'')+'" style="text-transform:uppercase;letter-spacing:.08em"><span class="hint">A diretoria do clube encontra o código na Gestão.</span></div>'+
      '<div class="field"><label for="jc-role">Eu sou</label><select id="jc-role" name="role" class="input"><option value="desbravador">Desbravador(a)</option><option value="conselheiro">Conselheiro(a)</option><option value="instrutor">Instrutor(a)</option><option value="associado">Diretor(a) associado(a)</option></select><span class="hint">Liderança entra depois que a diretoria aprovar.</span></div>'+
