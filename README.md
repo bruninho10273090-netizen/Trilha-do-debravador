@@ -13,3 +13,13 @@ python3 -m http.server 8000
 ```
 
 Dentro do Claude, o app salva os dados no banco compartilhado do artefato (`window.claude.use('db')`). Fora dele, usa o `localStorage` do navegador.
+
+## Backend
+
+A pasta [`backend/`](backend/README.md) tem a API com contas de acesso, permissões por papel e vários clubes (Node + TypeScript + Fastify + PostgreSQL). Para subir tudo:
+
+```sh
+docker compose up --build
+```
+
+O app ainda não usa essa API; ligar o front a ela é o próximo passo.
