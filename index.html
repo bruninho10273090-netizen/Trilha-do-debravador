@@ -237,6 +237,7 @@ details.info p{margin-top:6px;color:var(--muted);line-height:1.55}
 .li .grow>strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .grow>p{font-size:13.5px}
 .li small,.li .sub{color:var(--muted);font-size:12.5px}
+.li .grow>.sub{display:block}
 .av{--avc:#1F5A3C;--avf:#fff;width:36px;height:36px;border-radius:50%;background:var(--avc);color:var(--avf);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none;letter-spacing:.02em}
 .av.lg{width:54px;height:54px;font-size:19px}
 .av.sm{width:30px;height:30px;font-size:11.5px}
@@ -978,6 +979,15 @@ const Srv={
 };
 const DEFAULT_RET='Precisa de ajustes. Converse com a liderança.';
 Object.assign(Srv,{
+  plat:null,
+  async loadPlat(){
+    App.platLoading=true; render();
+    try{ const [c,i,p]=await Promise.all([Api.get('/admin/clubs'),Api.get('/admin/invoices'),Api.get('/admin/plans')]); this.plat={clubs:c.clubs,invoices:i.invoices,plans:p.plans}; }
+    catch(e){ toast(e.message,'bad'); App.platform=false; }
+    App.platLoading=false; render();
+  }
+});
+Object.assign(Srv,{
   pub:null, invite:null,
   async loadSub(){
     App.subLoading=true; const id=Srv.club.id;
@@ -1182,6 +1192,7 @@ function render(){
   if(Store.base==='api'&&!Store.demo){
     if(Srv.loading){ app.innerHTML='<div class="loading"><div><div class="patch lg" style="--pc:#B8820C">'+ic('compass')+'</div></div><div><h2>Abrindo o clube…</h2><p class="muted small">Carregando cartões e membros.</p></div></div>'; return; }
     if(!Srv.user){ renderAuthApi(); return; }
+    if(App.platform&&Srv.user.isPlatformAdmin){ renderPlatform(); return; }
     if(!Srv.club||!me()){ renderClubs(); return; }
   }
   const m=me();
@@ -1808,7 +1819,7 @@ function renderClubs(){
   const rows=list.map(c=>{ const ok=c.status==='ativo';
     return '<div class="li">'+(c.club.logoUrl?'<img class="club-logo" src="'+esc(c.club.logoUrl)+'" alt="">':'<span class="av" style="--avc:#173F2B" aria-hidden="true">'+esc(clubInitials(c.club.name))+'</span>')+'<div class="grow"><strong>'+esc(c.club.name)+'</strong><span class="sub">'+esc(ROLES[c.role]||'')+(c.isAdmin?' · administrador':'')+'</span></div>'+
       (ok?'<button class="btn sm" data-act="openClub" data-id="'+esc(c.club.id)+'">Abrir</button>':'<span class="pill warn">'+(c.status==='pendente'?'Aguardando aprovação':'Inativo')+'</span>')+'</div>'; }).join('');
-  const body='<div class="page-head"><div><p class="eyebrow">'+greet()+', '+esc(firstName(u.name))+'</p><h1>Meus clubes</h1></div></div>'+
+  const body='<div class="page-head"><div><p class="eyebrow">'+greet()+', '+esc(firstName(u.name))+'</p><h1>Meus clubes</h1></div>'+(u.isPlatformAdmin?'<button class="btn gold" data-act="platOpen">'+ic('sliders')+'Painel da plataforma</button>':'')+'</div>'+
    (Srv.pub&&Srv.invite?'<div class="mode-note">'+ic('users')+'<span>Convite do <b>'+esc(Srv.pub.club.name)+'</b>: o código já está preenchido abaixo. Escolha se você é desbravador ou da liderança e toque em Entrar no clube.</span></div>':'')+
    '<section class="card">'+(list.length?'<div class="list">'+rows+'</div>':'<div class="empty"><strong>Você ainda não está em nenhum clube.</strong>Entre com o código que a diretoria do seu clube passou, ou crie um clube novo.</div>')+'</section>'+
    '<div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">'+
@@ -1825,6 +1836,83 @@ function renderClubs(){
   app.innerHTML='<header class="bar"><div class="bar-in"><div class="brand">'+BRAND+'<div style="min-width:0"><div class="brand-name">Trilha do Desbravador</div><span class="brand-sub">Seus clubes</span></div></div>'+
    '<button class="me-chip" data-act="logout" aria-label="Sair da conta"><span class="av sm" style="--avc:#B8820C;--avf:#1D1400" aria-hidden="true">'+esc(initials(u.name))+'</span><span class="me-txt"><strong>'+esc(firstName(u.name))+'</strong><small>Sair</small></span></button></div></header>'+
    '<main class="wrap">'+body+'</main>';
+}
+/* ---------- PAINEL DA PLATAFORMA (quem vende as assinaturas) ---------- */
+const parseBRL=v=>{ const t=String(v||'').replace(/[^\d,.]/g,''); const n=t.indexOf(',')>=0?t.replace(/\./g,'').replace(',','.'):t; const x=Math.round(parseFloat(n)*100); return isFinite(x)?x:NaN; };
+const waLink=ph=>{ const d=String(ph||'').replace(/\D/g,''); return d?'https://wa.me/'+(d.length<=11?'55'+d:d):''; };
+const fmtDoc=d=>{ d=String(d||''); return d.length===11?d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'):d.length===14?d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):d; };
+function renderPlatform(){
+  const u=Srv.user, P=Srv.plat, tab=App.platTab||'resumo';
+  let body;
+  if(!P){ if(!App.platLoading) Srv.loadPlat(); body='<section class="card empty"><strong>Carregando o painel…</strong></section>'; }
+  else {
+    const pend=P.invoices.filter(i=>i.status==='pendente');
+    const tabs=[['resumo','Resumo'],['faturas','Faturas'+(pend.length?' ('+pend.length+')':'')],['clubes','Clubes'],['planos','Planos'],['contas','Contas']];
+    const views={resumo:platResumo,faturas:platFaturas,clubes:platClubes,planos:platPlanos,contas:platContas};
+    body='<div class="page-head"><div><p class="eyebrow">Trilha do Desbravador</p><h1>Painel da plataforma</h1></div><button class="btn ghost" data-act="platReload">'+ic('undo')+'Atualizar</button></div>'+
+      '<div class="seg" role="tablist">'+tabs.map(t=>'<button class="'+(tab===t[0]?'on':'')+'" data-act="platTab" data-v="'+t[0]+'" role="tab" aria-selected="'+(tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>'+(views[tab]||platResumo)(P);
+  }
+  app.innerHTML='<header class="bar"><div class="bar-in"><div class="brand">'+BRAND+'<div style="min-width:0"><div class="brand-name">Trilha do Desbravador</div><span class="brand-sub">Painel da plataforma</span></div></div>'+
+   '<button class="me-chip" data-act="platExit" aria-label="Voltar para Meus clubes"><span class="av sm" style="--avc:#B8820C;--avf:#1D1400" aria-hidden="true">'+esc(initials(u.name))+'</span><span class="me-txt"><strong>'+esc(firstName(u.name))+'</strong><small>Meus clubes</small></span></button></div></header>'+
+   '<main class="wrap">'+body+'</main>';
+}
+function subPill(s){ const cls=!s.active?'warn':s.state==='trial'?'gold':s.state==='em_atraso'?'warn':'ok'; return '<span class="pill '+cls+'">'+esc(SUB_STATE[s.state]||s.state)+'</span>'; }
+function platResumo(P){
+  const now=Date.now(), planOf=id=>P.plans.find(p=>p.id===id);
+  const paying=P.clubs.filter(c=>c.subscription.active&&c.subscription.state!=='trial'&&c.subscription.planId);
+  const mrr=paying.reduce((a,c)=>{ const p=planOf(c.subscription.planId); return a+(p?(p.interval==='anual'?p.priceCents/12:p.priceCents):0); },0);
+  const got=P.invoices.filter(i=>i.status==='paga'&&i.paidAt&&now-Date.parse(i.paidAt)<30*864e5).reduce((a,i)=>a+i.amountCents,0);
+  const trials=P.clubs.filter(c=>c.subscription.state==='trial'), expired=P.clubs.filter(c=>!c.subscription.active);
+  const ending=trials.filter(c=>Date.parse(c.subscription.endsAt)-now<7*864e5).sort((a,b)=>Date.parse(a.subscription.endsAt)-Date.parse(b.subscription.endsAt));
+  const pend=P.invoices.filter(i=>i.status==='pendente');
+  const tile=(n,l,alert,act)=>'<'+(act?'button data-act="platTab" data-v="'+act+'"':'div')+' class="tile'+(alert?' alert':'')+'"><b>'+n+'</b><span>'+l+'</span></'+(act?'button':'div')+'>';
+  return '<div class="tiles">'+tile(P.clubs.length,'clubes no total',false,'clubes')+tile(paying.length,'clubes pagantes')+tile(trials.length,'em teste grátis')+tile(expired.length,'vencidos (só leitura)',expired.length>0,'clubes')+'</div>'+
+   '<div class="tiles" style="grid-template-columns:repeat(2,minmax(0,1fr))">'+tile(brl(Math.round(mrr)),'receita mensal recorrente (estimada)')+tile(brl(got),'recebido nos últimos 30 dias')+'</div>'+
+   '<div class="cols"><section class="card"><div class="card-h"><h3>Pagamentos para confirmar</h3>'+(pend.length?'<button class="linkbtn small" data-act="platTab" data-v="faturas">Ver todos</button>':'')+'</div>'+
+     (pend.length?'<div class="list">'+pend.slice(0,5).map(i=>'<div class="li"><div class="grow"><strong>'+esc(i.club.name)+'</strong><span class="sub">'+esc(i.billingName||'')+' · emitida '+rel(Date.parse(i.createdAt))+'</span></div><b class="num">'+brl(i.amountCents)+'</b></div>').join('')+'</div>':'<div class="empty"><strong>Nada pendente.</strong>Quando um clube escolher um plano, a fatura aparece aqui.</div>')+'</section>'+
+    '<section class="card"><div class="card-h"><h3>Testes terminando em 7 dias</h3></div>'+
+     (ending.length?'<div class="list">'+ending.map(c=>'<div class="li"><div class="grow"><strong>'+esc(c.name)+'</strong><span class="sub">'+esc(c.admin.name)+' · termina '+fmtDay(c.subscription.endsAt)+'</span></div>'+(c.admin.phone?'<a class="btn sm ghost" href="'+waLink(c.admin.phone)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</div>').join('')+'</div>':'<p class="muted small">Nenhum teste terminando nos próximos dias.</p>')+'</section></div>';
+}
+function platFaturas(P){
+  const f=App.platInvF||'pendente', list=P.invoices.filter(i=>f==='todas'||i.status===f), planOf=id=>P.plans.find(p=>p.id===id);
+  return '<div class="seg" role="group">'+[['pendente','Aguardando pagamento'],['paga','Pagas'],['todas','Todas']].map(x=>'<button class="'+(f===x[0]?'on':'')+'" data-act="platInvF" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>'+
+   '<section class="card">'+(list.length?'<div class="list">'+list.map(i=>{ const p=planOf(i.planId);
+     return '<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:220px"><strong>'+esc(i.club.name)+' · '+brl(i.amountCents)+'</strong><span class="sub">'+(p?esc(p.name)+' · ':'')+esc(i.billingName||'')+(i.billingDocument?' · '+esc(fmtDoc(i.billingDocument)):'')+(i.billingEmail?' · '+esc(i.billingEmail):'')+'</span><span class="sub">Emitida em '+fmtDay(i.createdAt)+(i.status==='pendente'?' · vence '+fmtDay(i.dueAt):'')+(i.paidAt?' · paga em '+fmtDay(i.paidAt):'')+(i.providerRef?' · ref. '+esc(i.providerRef):'')+'</span></div>'+
+      (i.status==='pendente'?'<form class="row" data-form="platPaid" data-id="'+esc(i.id)+'"><label class="eyebrow" for="ref-'+esc(i.id)+'" style="position:absolute;left:-9999px">Referência do pagamento</label><input id="ref-'+esc(i.id)+'" name="ref" class="input" placeholder="Referência (ex.: PIX 12/10)" maxlength="200" style="width:210px;min-height:36px"><button class="btn sm" type="submit">'+ic('check')+'Confirmar pagamento</button></form>':'<span class="pill '+(i.status==='paga'?'ok':'')+'">'+esc(i.status==='paga'?'Paga':i.status==='cancelada'?'Substituída':'Estornada')+'</span>')+'</div>'; }).join('')+'</div>':'<div class="empty"><strong>Nenhuma fatura aqui.</strong></div>')+'</section>';
+}
+function platClubes(P){
+  const q=(App.platQ||'').trim().toLowerCase(), planOf=id=>P.plans.find(p=>p.id===id);
+  const list=P.clubs.filter(c=>!q||c.name.toLowerCase().indexOf(q)>=0||c.admin.name.toLowerCase().indexOf(q)>=0);
+  return '<div class="search">'+ic('search')+'<input id="psearch" class="input" data-inp="platQ" placeholder="Buscar por clube ou administrador" value="'+esc(App.platQ||'')+'" aria-label="Buscar clube"></div>'+
+   '<section class="card">'+(list.length?'<div class="list">'+list.map(c=>{ const s=c.subscription, p=planOf(s.planId);
+     return '<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:220px"><strong>'+esc(c.name)+'</strong><span class="sub">'+c.members+' membro'+(c.members===1?'':'s')+(c.church?' · '+esc(c.church):'')+' · desde '+fmtDay(c.createdAt)+'</span>'+
+       '<span class="sub">Admin: '+esc(c.admin.name)+' (@'+esc(c.admin.username)+')'+(c.admin.email?' · '+esc(c.admin.email):'')+'</span></div>'+
+       '<div class="row" style="gap:8px">'+subPill(s)+'<span class="small muted">'+(s.endsAt?(s.active?'até ':'desde ')+fmtDay(s.endsAt):'')+(p?' · '+esc(p.name):'')+'</span>'+
+       (c.admin.phone?'<a class="btn sm ghost" href="'+waLink(c.admin.phone)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+       '<button class="btn sm ghost" data-act="platExtend" data-id="'+esc(c.id)+'" data-days="7">+7 dias</button><button class="btn sm ghost" data-act="platExtend" data-id="'+esc(c.id)+'" data-days="30">+30 dias</button></div></div>'; }).join('')+'</div>':'<div class="empty"><strong>Nenhum clube encontrado.</strong></div>')+'</section>'+
+   '<p class="hint">"+7 dias" e "+30 dias" dão cortesia: para quem ainda não paga, somam ao teste grátis; para quem paga, somam ao período pago.</p>';
+}
+function platPlanos(P){
+  const row=p=>'<form class="medit" data-form="platPlan" data-id="'+esc(p.id)+'" style="margin:0"><div class="grid2">'+
+    '<div class="field"><label for="pl-n-'+p.id+'">Nome</label><input id="pl-n-'+p.id+'" name="name" class="input" value="'+esc(p.name)+'" required maxlength="80"></div>'+
+    '<div class="field"><label for="pl-p-'+p.id+'">Preço '+(p.interval==='anual'?'por ano':'por mês')+' (R$)</label><input id="pl-p-'+p.id+'" name="price" class="input num" inputmode="decimal" value="'+(p.priceCents/100).toFixed(2).replace('.',',')+'" required></div>'+
+    '<div class="field"><label for="pl-m-'+p.id+'">Limite de membros</label><input id="pl-m-'+p.id+'" name="maxMembers" type="number" min="1" class="input" value="'+(p.maxMembers||'')+'" placeholder="Sem limite"></div>'+
+    '<div class="field"><label>Situação</label><label class="row" style="min-height:44px;font-weight:600;font-size:14px"><input type="checkbox" name="active"'+(p.active?' checked':'')+' style="accent-color:var(--pine);width:18px;height:18px"> À venda</label></div>'+
+    '</div><div class="row between"><span class="hint">Código: '+esc(p.code)+' · '+(p.interval==='anual'?'anual':'mensal')+'. O preço novo vale para as próximas faturas.</span><button class="btn sm" type="submit">Salvar</button></div></form>';
+  return '<section class="card"><div class="card-h"><h3>Planos</h3></div><div style="display:grid;gap:10px">'+P.plans.map(row).join('')+'</div></section>'+
+   '<section class="card"><div class="card-h"><h3>Novo plano</h3></div><form data-form="platNewPlan" style="display:grid;gap:14px"><div class="grid2">'+
+    '<div class="field"><label for="np-name">Nome</label><input id="np-name" name="name" class="input" required maxlength="80" placeholder="Ex.: Semestral"></div>'+
+    '<div class="field"><label for="np-code">Código</label><input id="np-code" name="code" class="input" required pattern="[a-z0-9\\-]{2,40}" placeholder="ex.: mensal-promo"><span class="hint">Letras minúsculas, números e hífen.</span></div>'+
+    '<div class="field"><label for="np-int">Cobrança</label><select id="np-int" name="interval" class="input"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>'+
+    '<div class="field"><label for="np-price">Preço (R$)</label><input id="np-price" name="price" class="input" inputmode="decimal" required placeholder="0,00"></div>'+
+    '<div class="field"><label for="np-max">Limite de membros</label><input id="np-max" name="maxMembers" type="number" min="1" class="input" placeholder="Sem limite"></div>'+
+   '</div>'+(App.formErr&&App.formErrFor==='platNewPlan'?'<p class="err">'+esc(App.formErr)+'</p>':'')+'<div><button class="btn" type="submit">'+ic('plus')+'Criar plano</button></div></form></section>';
+}
+function platContas(){
+  const list=App.platUsers;
+  return '<form class="search" data-form="platUsers" role="search">'+ic('search')+'<input name="q" class="input" placeholder="Buscar conta por nome ou usuário e tecle Enter" value="'+esc(App.platUserQ||'')+'" aria-label="Buscar conta"></form>'+
+   '<section class="card">'+(!list?'<p class="muted small">Busque uma conta para ver os dados, desativar ou reativar o acesso.</p>':list.length?'<div class="list">'+list.map(x=>'<div class="li" style="flex-wrap:wrap"><span class="av sm" aria-hidden="true">'+esc(initials(x.name))+'</span><div class="grow"><strong>'+esc(x.name)+(x.isPlatformAdmin?' <span class="pill gold">plataforma</span>':'')+'</strong><span class="sub">@'+esc(x.username)+(x.email?' · '+esc(x.email):'')+(x.phone?' · '+esc(x.phone):'')+(x.city?' · '+esc(x.city)+(x.state?'/'+esc(x.state):''):'')+' · desde '+fmtDay(x.createdAt)+'</span></div>'+
+     (x.id===Srv.user.id?'<span class="pill">você</span>':'<button class="btn sm ghost" data-act="platUserToggle" data-id="'+esc(x.id)+'" data-off="'+(x.disabledAt?'0':'1')+'">'+(x.disabledAt?'Reativar acesso':'Desativar acesso')+'</button>')+'</div>').join('')+'</div>':'<div class="empty"><strong>Nenhuma conta encontrada.</strong></div>')+'</section>';
 }
 function modeNote(){
   if(Store.demo) return '';
@@ -1920,6 +2008,15 @@ const Act={
   async denyAcc(el){ if(!isAdmin(me())) return; const ok=await Store.delMember(el.dataset.id); if(ok) toast('Pedido recusado.'); },
   async delUnit(el){ if(!isAdmin(me())) return; const c=clone(cfg()); const n=kids().filter(k=>k.unit===el.dataset.id).length; c.units=(c.units||[]).filter(u=>u.id!==el.dataset.id); const ok=await Store.setConfig(c); if(ok) toast(n?'Unidade removida. '+n+' membro'+(n>1?'s ficaram':' ficou')+' sem unidade.':'Unidade removida.'); },
   openClub(el){ Srv.open(el.dataset.id); },
+  platOpen(){ App.platform=true; App.platTab='resumo'; Srv.plat=null; render(); window.scrollTo({top:0}); },
+  platExit(){ App.platform=false; render(); window.scrollTo({top:0}); },
+  platTab(el){ App.platTab=el.dataset.v; App.formErr=''; render(); window.scrollTo({top:0}); },
+  platInvF(el){ App.platInvF=el.dataset.v; render(); },
+  platReload(){ Srv.loadPlat(); },
+  async platExtend(el){ const days=+el.dataset.days;
+    try{ await Api.post('/admin/clubs/'+el.dataset.id+'/subscription/extend',{days:days}); toast(days+' dias adicionados.'); await Srv.loadPlat(); }catch(e){ toast(e.message,'bad'); } },
+  async platUserToggle(el){ const off=el.dataset.off==='1';
+    try{ const r=await Api.patch('/admin/users/'+el.dataset.id,{disabled:off}); App.platUsers=App.platUsers.map(x=>x.id===r.user.id?r.user:x); toast(off?'Acesso desativado. A pessoa foi desconectada.':'Acesso reativado.'); render(); }catch(e){ toast(e.message,'bad'); } },
   themePreset(el){ App.themeDraft=trimTheme(PRESETS[+el.dataset.i].t); render(); },
   themeDiscard(){ App.themeDraft=null; render(); },
   themeDefault(){ App.themeDraft={}; render(); },
@@ -2071,6 +2168,16 @@ Object.assign(Forms,{
     try{ const r=await Api.post('/clubs',{name:val(d,'name'),church:val(d,'church')||null,region:val(d,'region')||null}); App.busy=false;
       await Srv.loadMe(); await Srv.open(r.club.id); burst(); toast('Clube criado! Você tem 14 dias grátis para experimentar.','gold'); }
     catch(e){ App.busy=false; formErr(e.message); } },
+  async platPaid(f){ const ref=String(new FormData(f).get('ref')||'').trim();
+    try{ await Api.post('/admin/invoices/'+f.dataset.id+'/paid',ref?{reference:ref}:{}); toast('Pagamento confirmado. O clube já está com o período liberado.','gold'); await Srv.loadPlat(); }catch(e){ toast(e.message,'bad'); } },
+  async platPlan(f){ const d=new FormData(f), price=parseBRL(d.get('price')), max=String(d.get('maxMembers')||'').trim();
+    if(!(price>=0)) return toast('Preço inválido. Use, por exemplo, 13,49.','bad');
+    try{ await Api.patch('/admin/plans/'+f.dataset.id,{name:String(d.get('name')||'').trim(),priceCents:price,maxMembers:max?+max:null,active:d.get('active')==='on'}); toast('Plano salvo.'); await Srv.loadPlat(); }catch(e){ toast(e.message,'bad'); } },
+  async platNewPlan(f){ const d=new FormData(f), price=parseBRL(d.get('price')), max=String(d.get('maxMembers')||'').trim(); App.formErrFor='platNewPlan';
+    if(!(price>=0)) return formErr('Preço inválido. Use, por exemplo, 13,49.');
+    try{ await Api.post('/admin/plans',{code:String(d.get('code')||'').trim().toLowerCase(),name:String(d.get('name')||'').trim(),interval:String(d.get('interval')),priceCents:price,maxMembers:max?+max:null}); App.formErr=''; toast('Plano criado e já à venda.'); await Srv.loadPlat(); }catch(e){ formErr(e.message); } },
+  async platUsers(f){ const q=String(new FormData(f).get('q')||'').trim(); App.platUserQ=q;
+    try{ App.platUsers=(await Api.get('/admin/users'+(q?'?q='+encodeURIComponent(q):''))).users; render(); }catch(e){ toast(e.message,'bad'); } },
   async checkout(f){ if(!isClubAdmin()) return; const d=new FormData(f); App.formErrFor='checkout'; App.subPlan=String(d.get('planId')||'');
     const doc=String(d.get('billingDocument')||'').replace(/\D/g,'');
     if(doc.length!==11&&doc.length!==14) return formErr('Informe um CPF (11 números) ou CNPJ (14 números).');
@@ -2110,6 +2217,7 @@ document.addEventListener('input',ev=>{ const el=ev.target; if(!el.dataset) retu
     const hx=document.querySelector('[data-theme-hex="'+k+'"]'); if(hx) hx.value=v; return; }
   if(el.dataset.draft){ const k=el.dataset.draft; Drafts[k]=el.value; el.style.height='auto'; el.style.height=Math.min(el.scrollHeight+2,520)+'px'; queueSave(k); return; }
   if(el.dataset.inp==='espQ'){ App.espQ=el.value; const pos=el.selectionStart; render(); const n=document.getElementById('esearch'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} } return; }
+  if(el.dataset.inp==='platQ'){ App.platQ=el.value; const pos=el.selectionStart; render(); const n=document.getElementById('psearch'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} } return; }
   if(el.dataset.inp==='search'){ App.search=el.value; const pos=el.selectionStart; render(); const n=document.getElementById('msearch'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} } } });
 document.addEventListener('toggle',ev=>{ const d=ev.target; if(d.matches&&d.matches('details.info')) App.info[d.dataset.key]=d.open; },true);
 document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&App.overlay){ App.overlay=null; render(); } });

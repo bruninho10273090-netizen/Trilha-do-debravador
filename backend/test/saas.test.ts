@@ -235,6 +235,26 @@ describe('assinatura', () => {
     expect((await b.post('/clubs/join', { code })).status).toBe(402);
   });
 
+  it('plataforma dá dias de cortesia: teste para quem não paga, período para quem paga', async () => {
+    const admin = await platformAdmin();
+    const { owner, club } = await newClub('Clube Cortesia');
+    await ctx.db.update(subscriptions).set({ trialEndsAt: new Date(Date.now() - 864e5) }).where(eq(subscriptions.clubId, club.id));
+    const r = await admin.post(`/admin/clubs/${club.id}/subscription/extend`, { days: 30 });
+    expect(r.body.subscription).toMatchObject({ state: 'trial', active: true });
+    const left = (new Date(r.body.subscription.trialEndsAt).getTime() - Date.now()) / 864e5;
+    expect(left).toBeGreaterThan(29.9);
+    expect(left).toBeLessThan(30.1);
+
+    const plan = (await client(app()).get('/plans')).body.plans[0];
+    const co = await owner.post(`/clubs/${club.id}/subscription`, { planId: plan.id, billingName: 'X Y', billingDocument: CPF, billingEmail: 'x@y.com' });
+    await admin.post(`/admin/invoices/${co.body.invoice.id}/paid`);
+    const before = (await owner.get(`/clubs/${club.id}/subscription`)).body.subscription.currentPeriodEnd;
+    const r2 = await admin.post(`/admin/clubs/${club.id}/subscription/extend`, { days: 10 });
+    expect(r2.body.subscription.state).toBe('ativa');
+    expect(new Date(r2.body.subscription.currentPeriodEnd).getTime() - new Date(before).getTime()).toBe(10 * 864e5);
+    expect((await owner.post(`/admin/clubs/${club.id}/subscription/extend`, { days: 10 })).status).toBe(403);
+  });
+
   it('só a plataforma cria planos e vê todos os clubes', async () => {
     const { owner } = await newClub('Clube Qualquer');
     expect((await owner.post('/admin/plans', { code: 'x', name: 'X', interval: 'mensal', priceCents: 1 })).status).toBe(403);

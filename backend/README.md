@@ -210,6 +210,7 @@ Só para contas com `isPlatformAdmin`.
 | GET/POST | `/admin/plans` · PATCH `/admin/plans/:planId` | planos |
 | GET | `/admin/invoices?status=pendente` | faturas |
 | POST | `/admin/invoices/:invoiceId/paid` | `{ reference? }` confirma pagamento |
+| POST | `/admin/clubs/:clubId/subscription/extend` | `{ days }` cortesia: soma ao teste de quem não paga, ou ao período pago |
 | PATCH | `/admin/clubs/:clubId/subscription` | ajuste manual (cortesia, prorrogação) |
 | GET | `/admin/users?q=` · PATCH `/admin/users/:userId` | contas; `{ disabled?, isPlatformAdmin? }` |
 

@@ -73,13 +73,13 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.get('/admin/invoices', async (req) => {
     const q = parse(z.object({ status: z.enum(['pendente', 'paga', 'cancelada', 'estornada']).optional() }), req.query);
-    const rows = await db.select({ inv: invoices, clubId: clubs.id, clubName: clubs.name, billingName: subscriptions.billingName })
+    const rows = await db.select({ inv: invoices, clubId: clubs.id, clubName: clubs.name, billingName: subscriptions.billingName, billingDocument: subscriptions.billingDocument, billingEmail: subscriptions.billingEmail })
       .from(invoices)
       .innerJoin(subscriptions, eq(subscriptions.id, invoices.subscriptionId))
       .innerJoin(clubs, eq(clubs.id, subscriptions.clubId))
       .where(q.status ? eq(invoices.status, q.status) : undefined)
       .orderBy(desc(invoices.createdAt)).limit(200);
-    return { invoices: rows.map((r) => ({ ...r.inv, club: { id: r.clubId, name: r.clubName }, billingName: r.billingName })) };
+    return { invoices: rows.map((r) => ({ ...r.inv, club: { id: r.clubId, name: r.clubName }, billingName: r.billingName, billingDocument: r.billingDocument, billingEmail: r.billingEmail })) };
   });
 
   /** Confirma um pagamento recebido fora do sistema (PIX, transferência...). */
@@ -93,6 +93,27 @@ export async function adminRoutes(app: FastifyInstance) {
       return paid;
     });
     return { invoice: inv };
+  });
+
+  /**
+   * Dá dias a mais para um clube (cortesia ou prorrogação), somando ao que ainda resta.
+   * Quem nunca pagou ganha dias de teste; quem já paga ganha dias no período pago.
+   */
+  app.post('/admin/clubs/:clubId/subscription/extend', async (req) => {
+    const me = requireUser(req);
+    const clubId = parse(Uuid, (req.params as { clubId: string }).clubId);
+    const { days } = parse(z.object({ days: z.number().int().min(1).max(366) }), req.body);
+    const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.clubId, clubId)).limit(1);
+    if (!sub) throw notFound('Assinatura não encontrada.');
+    const now = Date.now();
+    const plus = (d: Date | null) => new Date(Math.max(now, d?.getTime() ?? 0) + days * 864e5);
+    const paid = sub.status !== 'trial' && !!sub.currentPeriodEnd;
+    const [s] = await db.update(subscriptions).set(paid
+      ? { currentPeriodEnd: plus(sub.currentPeriodEnd), updatedAt: new Date() }
+      : { status: 'trial', trialEndsAt: plus(sub.trialEndsAt), updatedAt: new Date() })
+      .where(eq(subscriptions.id, sub.id)).returning();
+    await audit(db, { clubId, actorId: me.id, action: 'admin.subscription.extend', data: { days } });
+    return { subscription: { ...s, ...subscriptionState(s) } };
   });
 
   /** Ajuste manual da assinatura (cortesia, prorrogação, correção). */
