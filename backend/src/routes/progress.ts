@@ -98,6 +98,30 @@ export async function progressRoutes(app: FastifyInstance) {
     return { requirements: reqs, specialties: esps, stats: computeStats(reqs, esps) };
   });
 
+  /**
+   * Progresso de todos os desbravadores ativos do clube numa chamada só (ranking,
+   * aprovações, painel). O status é visível a todos; respostas escritas, opções e
+   * comentários só para a liderança e para o próprio desbravador.
+   */
+  app.get('/clubs/:clubId/progress', async (req) => {
+    const ctx = await clubCtx(req, (req.params as P).clubId);
+    const kids = await db.select({ id: memberships.id }).from(memberships).where(and(
+      eq(memberships.clubId, ctx.club.id), eq(memberships.role, 'desbravador'), eq(memberships.status, 'ativo')));
+    const ids = kids.map((k) => k.id);
+    if (!ids.length) return { requirements: [], specialties: [] };
+    const full = can(ctx, 'members.viewAll');
+    const mine = ctx.membership?.id;
+    const reqs = await db.select().from(requirementProgress).where(inArray(requirementProgress.membershipId, ids));
+    const esps = await db.select().from(specialtyProgress).where(inArray(specialtyProgress.membershipId, ids));
+    const open = (id: string) => full || id === mine;
+    return {
+      requirements: reqs.map((r) => open(r.membershipId) ? r
+        : { membershipId: r.membershipId, itemKey: r.itemKey, status: r.status, reviewedAt: r.reviewedAt, updatedAt: r.updatedAt }),
+      specialties: esps.filter((s) => s.status).map((s) => open(s.membershipId) ? s
+        : { membershipId: s.membershipId, specialtyId: s.specialtyId, status: s.status, customName: s.customName, customArea: s.customArea, reviewedAt: s.reviewedAt, updatedAt: s.updatedAt }),
+    };
+  });
+
   /* ---------- requisitos de classe ---------- */
 
   app.patch(`${base}/requirements/:key`, async (req) => {

@@ -206,6 +206,22 @@ describe('cartão de classe', () => {
     await dir.patch(`/clubs/${club.id}/members/${cm.id}`, { unitId: unit.id });
     expect((await cons.post(url)).status).toBe(200);
   });
+  it('progresso do clube de uma vez: status para todos, respostas só para quem pode', async () => {
+    const { dir, kid, club, code, kidM } = await clubWithKid();
+    const base = `/clubs/${club.id}/members/${kidM.id}/requirements/amigo_I_3`;
+    await kid.patch(base, { note: 'minha resposta' });
+    await kid.post(`${base}/submit`);
+    const other = await newUser(app());
+    await other.post('/clubs/join', { code });
+
+    const lead = (await dir.get(`/clubs/${club.id}/progress`)).body.requirements;
+    expect(lead).toEqual([expect.objectContaining({ membershipId: kidM.id, itemKey: 'amigo_I_3', status: 'enviado', note: 'minha resposta' })]);
+    const own = (await kid.get(`/clubs/${club.id}/progress`)).body.requirements;
+    expect(own[0].note).toBe('minha resposta');
+    const peer = (await other.get(`/clubs/${club.id}/progress`)).body.requirements;
+    expect(peer[0]).toMatchObject({ itemKey: 'amigo_I_3', status: 'enviado' });
+    expect(peer[0]).not.toHaveProperty('note');
+  });
 });
 
 describe('caderno de especialidades', () => {

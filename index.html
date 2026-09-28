@@ -681,7 +681,7 @@ function espAbbr(name){ const clean=String(name).replace(/\./g,''); const m=/^(.
 const ROLES={diretor:'Diretor(a)',associado:'Diretor(a) associado(a)',conselheiro:'Conselheiro(a)',instrutor:'Instrutor(a)',desbravador:'Desbravador(a)'};
 const LEADER=['diretor','associado','conselheiro','instrutor'], ADMIN=['diretor','associado'];
 const isLeader=m=>!!m&&LEADER.indexOf(m.role)>=0&&m.status!=='pendente';
-const isAdmin=m=>!!m&&ADMIN.indexOf(m.role)>=0&&m.status!=='pendente';
+const isAdmin=m=>!!m&&(ADMIN.indexOf(m.role)>=0||!!m.isAdmin)&&m.status!=='pendente';
 const UNIT_COLORS=['#2F63AE','#C2621B','#7A4DA5','#2D8A4E','#BE3A2C','#1F8A8A','#B8820C','#5F686F'];
 
 const LV=[0,50,120,210,320,450,600,780,1000,1250,1550,1900,2300,2750,3250,3800,4400,5000];
@@ -806,6 +806,7 @@ const Store={
     let db=null;
     try{ if(window.claude&&typeof window.claude.use==='function') db=await window.claude.use('db'); }catch(e){db=null;}
     if(db){ this.db=db; this.base='cloud'; this.listen(); }
+    else if(await probeApi()){ this.base='api'; await Srv.boot(); }
     else this.goLocal();
   },
   goLocal(){
@@ -837,12 +838,15 @@ const Store={
     else if(!quiet){ toast('Não deu para salvar agora. Tente de novo em instantes.','bad'); }
   },
   local(){ return this.demo||this.base==='local'; },
-  setConfig(cfg){ if(this.local()){ this.d.config=clone(cfg); this.persist(); changed(); return Promise.resolve(true);} return this.run('club/config',()=>this.db.doc('club/config').set(cfg)); },
-  setMember(id,data,quiet){ if(this.local()){ this.d.members[id]=clone(data); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).set(data),quiet); },
-  patchMember(id,patch,quiet){ if(this.local()){ const cur=this.d.members[id]; if(!cur) return Promise.resolve(false); this.d.members[id]=merge(clone(cur),patch); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).update(patch),quiet); },
-  delMember(id){ if(this.local()){ delete this.d.members[id]; this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).delete()); },
+  /* modo servidor: as gravações do cartão passam pela API (próxima etapa); até lá, não grava */
+  apiBlocked(){ if(this.base!=='api'||this.demo) return false; toast('Ainda não dá para salvar isso no modo servidor.','bad'); return true; },
+  setConfig(cfg){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ this.d.config=clone(cfg); this.persist(); changed(); return Promise.resolve(true);} return this.run('club/config',()=>this.db.doc('club/config').set(cfg)); },
+  setMember(id,data,quiet){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ this.d.members[id]=clone(data); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).set(data),quiet); },
+  patchMember(id,patch,quiet){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ const cur=this.d.members[id]; if(!cur) return Promise.resolve(false); this.d.members[id]=merge(clone(cur),patch); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).update(patch),quiet); },
+  delMember(id){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ delete this.d.members[id]; this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).delete()); },
   /* textos: notes/{membro} guarda as respostas dos requisitos de classe; answers/{membro~especialidade} as do caderno */
   upsert(col,id,patch,base,quiet){
+    if(this.apiBlocked()) return Promise.resolve(false);
     const path=col+'/'+id;
     if(this.local()){ const bag=this.d[col]; bag[id]=merge(clone(bag[id]||base),patch); this.persist(); changed(); return Promise.resolve(true); }
     return this.run(path,()=>{ if(this.d[col][id]||this.known[path]) return this.db.doc(path).update(patch); return this.db.doc(path).set(merge(clone(base),patch)).then(()=>{ this.known[path]=1; }); },quiet);
@@ -850,11 +854,100 @@ const Store={
   saveNote(mid,key,txt){ return this.upsert('notes',mid,{t:{[key]:txt},at:Date.now()},{m:mid,t:{}}); },
   saveAnswer(mid,eid,i,txt){ return this.upsert('answers',mid+'~'+eid,{a:{['r'+i]:txt},at:Date.now()},{m:mid,e:eid,a:{},d:[]}); },
   setDone(mid,eid,d){ return this.upsert('answers',mid+'~'+eid,{d:d,at:Date.now()},{m:mid,e:eid,a:{},d:[]}); },
-  delDoc(col,id){ if(this.local()){ delete this.d[col][id]; this.persist(); changed(); return Promise.resolve(true);} return this.run(col+'/'+id,()=>this.db.doc(col+'/'+id).delete(),true); }
+  delDoc(col,id){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ delete this.d[col][id]; this.persist(); changed(); return Promise.resolve(true);} return this.run(col+'/'+id,()=>this.db.doc(col+'/'+id).delete(),true); }
 };
 const noteOf=(mid,key)=>{ const n=Store.d.notes[mid]; return (n&&n.t&&n.t[key])||''; };
 const ansDoc=(mid,eid)=>Store.d.answers[mid+'~'+eid]||null;
 const ansOf=(mid,eid,i)=>{ const a=ansDoc(mid,eid); return (a&&a.a&&a.a['r'+i])||''; };
+
+/* =========================================================
+   SERVIDOR — quando o app é aberto pelo backend (rotas /api)
+   ========================================================= */
+const TKEY='trilha-dbv.api.token', CKEY='trilha-dbv.api.club';
+const UFS=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+const Api={
+  token:LS.get(TKEY),
+  setToken(t){ this.token=t; if(t) LS.set(TKEY,t); else LS.del(TKEY); },
+  async call(method,path,body){
+    const h={}; if(this.token) h.authorization='Bearer '+this.token; if(body!==undefined) h['content-type']='application/json';
+    let res;
+    try{ res=await fetch('/api'+path,{method:method,headers:h,body:body!==undefined?JSON.stringify(body):undefined}); }
+    catch(e){ const err=new Error('Sem conexão com o servidor. Verifique a internet e tente de novo.'); err.status=0; throw err; }
+    const data=res.status===204?null:await res.json().catch(()=>null);
+    if(!res.ok){
+      const d=data&&data.details&&data.details[0];
+      const err=new Error((d&&d.message&&d.message.length<120?d.message:null)||(data&&data.message)||'Algo deu errado. Tente de novo.');
+      err.status=res.status; err.code=data&&data.error;
+      if(res.status===401&&this.token&&path!=='/auth/password'){ this.setToken(null); Srv.reset(); toast('Sua sessão expirou. Entre de novo.','bad'); render(); }
+      throw err;
+    }
+    return data;
+  },
+  get(p){ return this.call('GET',p); }, post(p,b){ return this.call('POST',p,b||{}); },
+  patch(p,b){ return this.call('PATCH',p,b); }, del(p,b){ return this.call('DELETE',p,b); }
+};
+/* O app está sendo servido pelo backend? (no artefato ou abrindo o arquivo direto, não) */
+async function probeApi(){
+  if(!/^https?:$/.test(location.protocol)) return false;
+  try{ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),2500); const r=await fetch('/api/health',{signal:ctl.signal,cache:'no-store'}); clearTimeout(t); if(!r.ok) return false; const j=await r.json(); return !!(j&&j.ok); }catch(e){ return false; }
+}
+const ts=v=>v?Date.parse(v):0;
+const Srv={
+  user:null, clubs:[], clubId:LS.get(CKEY), club:null, info:null, loading:false, lastLoad:0,
+  reset(){ this.user=null; this.clubs=[]; this.leaveClub(); },
+  leaveClub(){ this.club=null; this.info=null; App.uid=null; Store.real={config:null,members:{},notes:{},answers:{}}; },
+  async boot(){
+    if(Api.token){ try{ await this.loadMe(); }catch(e){ if(e.status!==401) toast(e.message,'bad'); } }
+    const c=this.user&&this.clubs.find(x=>x.club.id===this.clubId&&x.status==='ativo');
+    if(c){ try{ await this.load(c.club.id); }catch(e){ this.forget(); } }
+    Store.ready=true; changed();
+  },
+  async loadMe(){ const r=await Api.get('/auth/me'); this.user=r.user; this.clubs=r.clubs; return r; },
+  forget(){ this.clubId=null; LS.del(CKEY); this.leaveClub(); },
+  async open(id){
+    this.loading=true; render();
+    try{ await this.load(id); this.clubId=id; LS.set(CKEY,id); App.view='home'; App.target=null; App.cls=null; App.adv=false; App.gestTab='membros'; App.unitF=null; }
+    catch(e){ toast(e.message,'bad'); this.forget(); }
+    this.loading=false; render(); window.scrollTo({top:0});
+  },
+  /* busca clube, membros e progresso e monta o mesmo formato que as telas já usam */
+  async load(id){
+    const q='/clubs/'+encodeURIComponent(id);
+    const [c,ms,pr]=await Promise.all([Api.get(q),Api.get(q+'/members'),Api.get(q+'/progress')]);
+    const mem={}, notes={}, answers={}, byUser={};
+    ms.members.forEach(x=>{
+      if(x.userId) byUser[x.userId]=x.id;
+      mem[x.id]={id:x.id,userId:x.userId||null,username:x.username,name:x.name,role:x.role,unit:x.unitId||null,birth:x.birth||null,classId:x.classId||null,
+        status:x.status,createdAt:ts(x.createdAt),email:x.email||null,phone:x.phone||null,city:x.city||null,state:x.state||null,
+        guardianName:x.guardianName||null,guardianPhone:x.guardianPhone||null,isAdmin:!!x.isAdmin,progress:{},esp:{}};
+    });
+    const own=c.membership, u=this.user;
+    if(own){
+      mem[own.id]=Object.assign(mem[own.id]||{id:own.id,role:own.role,status:own.status,unit:own.unitId||null,classId:own.classId||null,createdAt:ts(own.createdAt),progress:{},esp:{}},
+        {userId:u.id,username:u.username,name:u.name,birth:u.birth,email:u.email,phone:u.phone,city:u.city,state:u.state,guardianName:u.guardianName,guardianPhone:u.guardianPhone,isAdmin:!!c.isAdmin});
+      byUser[u.id]=own.id;
+    }
+    pr.requirements.forEach(r=>{
+      const m=mem[r.membershipId]; if(!m) return;
+      if(r.status||r.choice||r.subs) m.progress[r.itemKey]={s:r.status||null,at:ts(r.status==='enviado'?r.submittedAt:(r.reviewedAt||r.updatedAt)),by:byUser[r.reviewedBy]||null,cm:r.comment||null,choice:r.choice||undefined,subs:r.subs||undefined};
+      if(r.note) (notes[r.membershipId]=notes[r.membershipId]||{m:r.membershipId,t:{}}).t[r.itemKey]=r.note;
+    });
+    pr.specialties.forEach(sp=>{
+      const m=mem[sp.membershipId]; if(!m) return; const eid=sp.specialtyId;
+      if(sp.status) m.esp[eid]={s:sp.status,at:ts(sp.status==='enviado'?sp.submittedAt:(sp.reviewedAt||sp.updatedAt)),by:byUser[sp.reviewedBy]||null,cm:sp.comment||null,name:sp.customName||undefined,area:sp.customArea||undefined};
+      if(sp.answers||sp.done) answers[sp.membershipId+'~'+eid]={m:sp.membershipId,e:eid,a:sp.answers||{},d:sp.done||[]};
+    });
+    Store.real={config:{name:c.club.name,units:c.units.map((x,i)=>({id:x.id,name:x.name,color:x.color||UNIT_COLORS[i%UNIT_COLORS.length]}))},members:mem,notes:notes,answers:answers};
+    this.club=c.club; this.info=c; App.uid=own?own.id:null; this.lastLoad=Date.now();
+  },
+  /* recarrega em segundo plano (volta à aba, ou a cada minuto) sem atrapalhar quem está digitando */
+  async refresh(){
+    if(Store.base!=='api'||Store.demo||!this.club||this.loading||Date.now()-this.lastLoad<15000) return;
+    try{ await this.load(this.club.id); changed(); }catch(e){ if(e.status===404){ toast('Você não tem mais acesso a este clube.','bad'); this.forget(); await this.loadMe().catch(()=>{}); render(); } }
+  }
+};
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) Srv.refresh(); });
+setInterval(()=>{ if(!document.hidden) Srv.refresh(); },60000);
 
 /* rascunhos: o que a pessoa digita fica aqui até ser salvo, para nada se perder num redesenho */
 const Drafts={}, saveTimers={};
@@ -923,6 +1016,11 @@ document.addEventListener('focusout',()=>{ if(deferred) setTimeout(flushDeferred
 function render(){
   deferred=false;
   if(!Store.ready){ app.innerHTML='<div class="loading"><div>'+'<div class="patch lg" style="--pc:#B8820C">'+ic('compass')+'</div>'+'</div><div><h2>Abrindo o clube…</h2><p class="muted small">'+(Store.slow?'Está demorando mais que o normal. Verifique sua conexão.':'Carregando cartões e membros.')+'</p></div></div>'; return; }
+  if(Store.base==='api'&&!Store.demo){
+    if(Srv.loading){ app.innerHTML='<div class="loading"><div><div class="patch lg" style="--pc:#B8820C">'+ic('compass')+'</div></div><div><h2>Abrindo o clube…</h2><p class="muted small">Carregando cartões e membros.</p></div></div>'; return; }
+    if(!Srv.user){ renderAuthApi(); return; }
+    if(!Srv.club||!me()){ renderClubs(); return; }
+  }
   const m=me();
   if(!m){ renderAuth(); return; }
   renderShell(m);
@@ -934,6 +1032,7 @@ function banner(){
   if(Store.demo){ const who=me(); const kid=who&&who.role==='desbravador';
     return '<div class="banner"><div class="banner-in"><span>Demonstração com dados de exemplo. Nada aqui é salvo.</span><button class="btn gold" data-act="demoAs" data-id="'+(kid?'ana.diretora':'lucas')+'">Ver como '+(kid?'diretora':'desbravador')+'</button><button class="btn ghost" data-act="demoExit">Sair da demonstração</button></div></div>'; }
   if(Store.readOnly) return '<div class="banner bad"><div class="banner-in">Você está só visualizando: sua conta não tem permissão de edição neste app. Peça ao dono acesso de edição para salvar.</div></div>';
+  if(Store.base==='api') return '<div class="banner"><div class="banner-in">'+ic('cloud')+'<span>Em construção: por enquanto o cartão, as especialidades e a gestão ainda não salvam mudanças.</span></div></div>';
   if(Store.base==='local') return '<div class="banner"><div class="banner-in">'+ic('device')+'<span>Modo local: os dados ficam salvos só neste navegador.</span></div></div>';
   return '';
 }
@@ -1341,17 +1440,25 @@ function gestClube(){
 
 /* ---------- PERFIL ---------- */
 function viewPerfil(m){
-  const kid=m.role==='desbravador';
-  return '<div class="page-head"><div class="row" style="gap:14px">'+avHtml(m,'lg')+'<div><h1>'+esc(m.name)+'</h1><p class="muted">@'+esc(m.username)+' · '+esc(ROLES[m.role]||'')+(m.status==='pendente'?' (aguardando aprovação)':'')+'</p></div></div><button class="btn ghost" data-act="logout">'+ic('out')+'Sair</button></div>'+
+  const kid=m.role==='desbravador', srv=Store.base==='api'&&!Store.demo;
+  const extra=srv?
+   '<div class="field"><label for="pf-email">E-mail</label><input id="pf-email" name="email" type="email" class="input" value="'+esc(m.email||'')+'" autocomplete="email"></div>'+
+   '<div class="field"><label for="pf-phone">Celular</label><input id="pf-phone" name="phone" type="tel" class="input" value="'+esc(m.phone||'')+'" autocomplete="tel"></div>'+
+   '<div class="field"><label for="pf-city">Cidade</label><input id="pf-city" name="city" class="input" value="'+esc(m.city||'')+'"></div>'+
+   '<div class="field"><label for="pf-state">UF</label><select id="pf-state" name="state" class="input">'+ufOptions(m.state||'')+'</select></div>'+
+   '<div class="field"><label for="pf-gname">Responsável</label><input id="pf-gname" name="guardianName" class="input" value="'+esc(m.guardianName||'')+'" placeholder="Para menores de idade"></div>'+
+   '<div class="field"><label for="pf-gphone">Celular do responsável</label><input id="pf-gphone" name="guardianPhone" type="tel" class="input" value="'+esc(m.guardianPhone||'')+'"></div>':'';
+  return '<div class="page-head"><div class="row" style="gap:14px">'+avHtml(m,'lg')+'<div><h1>'+esc(m.name)+'</h1><p class="muted">@'+esc(m.username)+' · '+esc(ROLES[m.role]||'')+(m.isAdmin?' · administrador do clube':'')+(m.status==='pendente'?' (aguardando aprovação)':'')+'</p></div></div><div class="row">'+(srv?'<button class="btn ghost" data-act="myClubs">'+ic('users')+'Meus clubes</button>':'')+'<button class="btn ghost" data-act="logout">'+ic('out')+'Sair</button></div></div>'+
   '<div class="cols"><section class="card"><div class="card-h"><h3>Meus dados</h3></div><form data-form="profile" style="display:grid;gap:14px"><div class="grid2">'+
    '<div class="field"><label for="pf-name">Nome</label><input id="pf-name" name="name" class="input" value="'+esc(m.name)+'" maxlength="60" required></div>'+
    '<div class="field"><label for="pf-birth">Nascimento</label><input id="pf-birth" name="birth" type="date" class="input" value="'+esc(m.birth||'')+'"></div>'+
    '<div class="field"><label for="pf-unit">Unidade</label><select id="pf-unit" name="unit" class="input"'+(kid&&m.unit?' disabled':'')+'>'+unitOptions(m.unit,true)+'</select>'+(kid&&m.unit?'<span class="hint">Para trocar de unidade, fale com a liderança.</span>':'')+'</div>'+
    (kid?'<div class="field"><label>Classe atual</label><div class="input" style="display:flex;align-items:center">'+classTag(memberClass(m))+'</div><span class="hint">Definida pela idade ou pela liderança.</span></div>':'')+
+   extra+
   '</div>'+(App.formErr&&App.formErrFor==='profile'?'<p class="err">'+esc(App.formErr)+'</p>':'')+'<div><button class="btn" type="submit">Salvar</button></div></form></section>'+
   '<section class="card"><div class="card-h"><h3>Trocar senha</h3></div><form data-form="password" style="display:grid;gap:14px">'+
    '<div class="field"><label for="pw-cur">Senha atual</label><input id="pw-cur" name="cur" type="password" class="input" required autocomplete="current-password"></div>'+
-   '<div class="field"><label for="pw-new">Nova senha</label><input id="pw-new" name="pw" type="password" class="input" required minlength="6" autocomplete="new-password"></div>'+
+   '<div class="field"><label for="pw-new">Nova senha</label><input id="pw-new" name="pw" type="password" class="input" required minlength="'+(Store.base==='api'?8:6)+'" autocomplete="new-password"></div>'+
    (App.formErr&&App.formErrFor==='password'?'<p class="err">'+esc(App.formErr)+'</p>':'')+'<div><button class="btn" type="submit">Trocar senha</button></div></form></section></div>';
 }
 
@@ -1377,12 +1484,15 @@ function overlayHtml(){
 }
 
 /* ---------- AUTENTICAÇÃO ---------- */
-function renderAuth(){
-  const c=Store.d.config, hasM=Object.keys(Store.d.members).length>0, setup=!c&&!hasM&&!Store.demo;
-  const left='<section class="auth-l"><div class="brand" style="flex:none">'+BRAND+'<span class="brand-name">'+esc((c&&c.name)||'Clube de Desbravadores')+'</span></div>'+
+function authLeft(title){
+  return '<section class="auth-l"><div class="brand" style="flex:none">'+BRAND+'<span class="brand-name">'+esc(title)+'</span></div>'+
    '<h1>Cada requisito do cartão vira XP.</h1><p class="lead">A trilha das classes do clube em um só lugar: o desbravador marca o que fez, a liderança aprova e todo mundo acompanha o progresso.</p>'+
    '<ol class="tdots" aria-label="Classes regulares">'+CLASSES.map(x=>'<li style="--cc:'+CLASS_HEX[x.id]+'"><i></i><span>'+x.name+'</span></li>').join('')+'</ol>'+
    '<ul><li>'+ic('check')+'<span>Requisitos das 6 classes regulares e das 6 avançadas, seção por seção</span></li><li>'+ic('check')+'<span>Caderno com '+ESP.length+' especialidades e respostas escritas no próprio app</span></li><li>'+ic('check')+'<span>Níveis, insígnias e ranking por unidade</span></li><li>'+ic('check')+'<span>Fila de aprovação para conselheiros e instrutores</span></li></ul></section>';
+}
+function renderAuth(){
+  const c=Store.d.config, hasM=Object.keys(Store.d.members).length>0, setup=!c&&!hasM&&!Store.demo;
+  const left=authLeft((c&&c.name)||'Clube de Desbravadores');
   let right;
   if(setup){
     right='<div class="auth-card"><div><p class="eyebrow">Primeiro acesso</p><h2>Criar o clube</h2><p class="muted small" style="margin-top:4px">Você será o diretor(a) e poderá aprovar a liderança depois.</p></div>'+
@@ -1408,6 +1518,53 @@ function renderAuth(){
      '<p class="small muted" style="text-align:center">Só quer conhecer? <button class="linkbtn" data-act="demo">Explorar a demonstração</button></p>'+modeNote()+'</div>';
   }
   app.innerHTML=banner()+'<div class="auth">'+left+'<section class="auth-r">'+right+'</section></div>';
+}
+/* ---------- MODO SERVIDOR: entrar, criar conta e escolher o clube ---------- */
+const ufOptions=sel=>'<option value="">UF</option>'+UFS.map(u=>'<option'+(u===sel?' selected':'')+'>'+u+'</option>').join('');
+function renderAuthApi(){
+  const tab=App.authTab, err=App.authErr?'<p class="err" role="alert">'+esc(App.authErr)+'</p>':'';
+  const right='<div class="auth-card"><div class="seg full" role="tablist"><button class="'+(tab==='login'?'on':'')+'" data-act="authTab" data-v="login" role="tab" aria-selected="'+(tab==='login')+'">Entrar</button><button class="'+(tab==='signup'?'on':'')+'" data-act="authTab" data-v="signup" role="tab" aria-selected="'+(tab==='signup')+'">Criar conta</button></div>'+
+   (tab==='login'?
+    '<form data-form="apiLogin"><div><h2>Bem-vindo de volta</h2><p class="muted small" style="margin-top:4px">Uma conta só para todos os seus clubes.</p></div>'+
+     '<div class="field"><label for="lg-user">Usuário ou e-mail</label><input id="lg-user" name="user" class="input" required autocomplete="username" autocapitalize="none"></div>'+
+     '<div class="field"><label for="lg-pw">Senha</label><input id="lg-pw" name="pw" type="password" class="input" required autocomplete="current-password"></div>'+
+     err+'<button class="btn block" type="submit"'+(App.busy?' disabled':'')+'>'+(App.busy?'Entrando…':'Entrar')+'</button><p class="hint">Esqueceu a senha? A diretoria do seu clube pode criar uma nova para você.</p></form>'
+   :
+    '<form data-form="apiSignup"><div><h2>Criar conta</h2><p class="muted small" style="margin-top:4px">Depois você cria o seu clube ou entra em um com o código de convite.</p></div>'+
+     '<div class="field"><label for="sg-name">Nome completo</label><input id="sg-name" name="name" class="input" required maxlength="80" autocomplete="name"></div>'+
+     '<div class="grid2"><div class="field"><label for="sg-user">Usuário</label><input id="sg-user" name="user" class="input" required autocomplete="username" autocapitalize="none" pattern="[A-Za-z0-9._\\-]{3,24}"><span class="hint">Ex.: joao.silva</span></div>'+
+     '<div class="field"><label for="sg-pw">Senha</label><input id="sg-pw" name="pw" type="password" class="input" required minlength="8" autocomplete="new-password"><span class="hint">Mínimo de 8 caracteres</span></div></div>'+
+     '<div class="grid2"><div class="field"><label for="sg-email">E-mail <span class="muted">(opcional)</span></label><input id="sg-email" name="email" type="email" class="input" autocomplete="email"></div>'+
+     '<div class="field"><label for="sg-birth">Nascimento</label><input id="sg-birth" name="birth" type="date" class="input"></div></div>'+
+     '<div class="grid2"><div class="field"><label for="sg-phone">Celular <span class="muted">(opcional)</span></label><input id="sg-phone" name="phone" type="tel" class="input" autocomplete="tel" placeholder="(11) 98765-4321"></div>'+
+     '<div class="grid2" style="grid-template-columns:minmax(0,1fr) 84px"><div class="field"><label for="sg-city">Cidade</label><input id="sg-city" name="city" class="input" autocomplete="address-level2"></div><div class="field"><label for="sg-state">UF</label><select id="sg-state" name="state" class="input">'+ufOptions('')+'</select></div></div></div>'+
+     '<details class="info"><summary>Responsável (para menores de idade)</summary><div class="grid2" style="margin-top:10px"><div class="field"><label for="sg-gname">Nome do responsável</label><input id="sg-gname" name="guardianName" class="input" maxlength="80"></div><div class="field"><label for="sg-gphone">Celular do responsável</label><input id="sg-gphone" name="guardianPhone" type="tel" class="input" placeholder="(11) 91234-5678"></div></div></details>'+
+     err+'<button class="btn block" type="submit"'+(App.busy?' disabled':'')+'>'+(App.busy?'Criando…':'Criar conta')+'</button></form>')+
+   '<p class="small muted" style="text-align:center">Só quer conhecer? <button class="linkbtn" data-act="demo">Explorar a demonstração</button></p></div>';
+  app.innerHTML='<div class="auth">'+authLeft('Trilha do Desbravador')+'<section class="auth-r">'+right+'</section></div>';
+}
+function clubInitials(n){ return initials(String(n||'').replace(/^clube\s+(de\s+desbravadores\s+)?/i,'')); }
+function renderClubs(){
+  const u=Srv.user, list=Srv.clubs, e=f=>App.formErr&&App.formErrFor===f?'<p class="err" role="alert">'+esc(App.formErr)+'</p>':'';
+  const rows=list.map(c=>{ const ok=c.status==='ativo';
+    return '<div class="li"><span class="av" style="--avc:#173F2B" aria-hidden="true">'+esc(clubInitials(c.club.name))+'</span><div class="grow"><strong>'+esc(c.club.name)+'</strong><span class="sub">'+esc(ROLES[c.role]||'')+(c.isAdmin?' · administrador':'')+'</span></div>'+
+      (ok?'<button class="btn sm" data-act="openClub" data-id="'+esc(c.club.id)+'">Abrir</button>':'<span class="pill warn">'+(c.status==='pendente'?'Aguardando aprovação':'Inativo')+'</span>')+'</div>'; }).join('');
+  const body='<div class="page-head"><div><p class="eyebrow">'+greet()+', '+esc(firstName(u.name))+'</p><h1>Meus clubes</h1></div></div>'+
+   '<section class="card">'+(list.length?'<div class="list">'+rows+'</div>':'<div class="empty"><strong>Você ainda não está em nenhum clube.</strong>Entre com o código que a diretoria do seu clube passou, ou crie um clube novo.</div>')+'</section>'+
+   '<div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">'+
+    '<section class="card"><div class="card-h"><h3>Entrar em um clube</h3></div><form data-form="joinClub" style="display:grid;gap:14px">'+
+     '<div class="field"><label for="jc-code">Código de convite</label><input id="jc-code" name="code" class="input" required autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="Ex.: K7M2Q9XA" style="text-transform:uppercase;letter-spacing:.08em"><span class="hint">A diretoria do clube encontra o código na Gestão.</span></div>'+
+     '<div class="field"><label for="jc-role">Eu sou</label><select id="jc-role" name="role" class="input"><option value="desbravador">Desbravador(a)</option><option value="conselheiro">Conselheiro(a)</option><option value="instrutor">Instrutor(a)</option><option value="associado">Diretor(a) associado(a)</option></select><span class="hint">Liderança entra depois que a diretoria aprovar.</span></div>'+
+     e('joinClub')+'<div><button class="btn" type="submit"'+(App.busy?' disabled':'')+'>Entrar no clube</button></div></form></section>'+
+    '<section class="card"><div class="card-h"><h3>Criar um clube</h3></div><form data-form="createClub" style="display:grid;gap:14px">'+
+     '<div class="field"><label for="cc-name">Nome do clube</label><input id="cc-name" name="name" class="input" required minlength="2" maxlength="80" placeholder="Ex.: Clube Águias do Vale"></div>'+
+     '<div class="grid2"><div class="field"><label for="cc-church">Igreja <span class="muted">(opcional)</span></label><input id="cc-church" name="church" class="input" maxlength="120"></div><div class="field"><label for="cc-region">Associação/Região <span class="muted">(opcional)</span></label><input id="cc-region" name="region" class="input" maxlength="120"></div></div>'+
+     '<p class="hint">Você será o administrador do clube: cuida da assinatura, das cores e do logo. Os primeiros 14 dias são grátis.</p>'+
+     e('createClub')+'<div><button class="btn" type="submit"'+(App.busy?' disabled':'')+'>'+ic('plus')+'Criar clube</button></div></form></section>'+
+   '</div>';
+  app.innerHTML='<header class="bar"><div class="bar-in"><div class="brand">'+BRAND+'<div style="min-width:0"><div class="brand-name">Trilha do Desbravador</div><span class="brand-sub">Seus clubes</span></div></div>'+
+   '<button class="me-chip" data-act="logout" aria-label="Sair da conta"><span class="av sm" style="--avc:#B8820C;--avf:#1D1400" aria-hidden="true">'+esc(initials(u.name))+'</span><span class="me-txt"><strong>'+esc(firstName(u.name))+'</strong><small>Sair</small></span></button></div></header>'+
+   '<main class="wrap">'+body+'</main>';
 }
 function modeNote(){
   if(Store.demo) return '';
@@ -1502,7 +1659,11 @@ const Act={
   async okAcc(el){ if(!isAdmin(me())) return; const ok=await Store.patchMember(el.dataset.id,{status:'ativo'}); if(ok) toast('Conta aprovada.'); },
   async denyAcc(el){ if(!isAdmin(me())) return; const ok=await Store.delMember(el.dataset.id); if(ok) toast('Pedido recusado.'); },
   async delUnit(el){ if(!isAdmin(me())) return; const c=clone(cfg()); const n=kids().filter(k=>k.unit===el.dataset.id).length; c.units=(c.units||[]).filter(u=>u.id!==el.dataset.id); const ok=await Store.setConfig(c); if(ok) toast(n?'Unidade removida. '+n+' membro'+(n>1?'s ficaram':' ficou')+' sem unidade.':'Unidade removida.'); },
-  logout(){ if(Store.demo){ Act.demoExit(); return; } LS.del(SKEY+Store.base); App.uid=null; App.view='home'; App.authTab='login'; render(); },
+  openClub(el){ Srv.open(el.dataset.id); },
+  async myClubs(){ Srv.forget(); App.formErr=''; render(); await Srv.loadMe().catch(()=>{}); render(); window.scrollTo({top:0}); },
+  logout(){ if(Store.demo){ Act.demoExit(); return; }
+    if(Store.base==='api'){ Api.post('/auth/logout').catch(()=>{}); Api.setToken(null); Srv.forget(); Srv.reset(); App.view='home'; App.authTab='login'; App.authErr=''; render(); return; }
+    LS.del(SKEY+Store.base); App.uid=null; App.view='home'; App.authTab='login'; render(); },
   demo(){ Store.demoData=seedDemo(); Store.demo=true; App.demoUid='ana.diretora'; App.view='home'; App.target=null; App.cls=null; App.adv=false; App.seen={}; render(); window.scrollTo({top:0}); },
   demoAs(el){ App.demoUid=el.dataset.id; App.view='home'; App.target=null; App.cls=null; App.adv=false; App.overlay=null; render(); window.scrollTo({top:0}); },
   demoExit(){ Store.demo=false; Store.demoData=null; App.demoUid=null; App.view='home'; App.overlay=null; App.target=null; App.cls=null; render(); window.scrollTo({top:0}); }
@@ -1552,14 +1713,63 @@ const Forms={
   async addUnit(f){ if(!isAdmin(me())) return; const n=String(new FormData(f).get('name')||'').trim(); if(!n) return; const c=clone(cfg()); c.units=c.units||[]; c.units.push({id:'u'+rid(),name:n.slice(0,30),color:UNIT_COLORS[c.units.length%UNIT_COLORS.length]}); const ok=await Store.setConfig(c); if(ok) toast('Unidade '+n+' criada.'); },
   async renameUnit(f){ if(!isAdmin(me())) return; const n=String(new FormData(f).get('name')||'').trim(); if(!n) return; const c=clone(cfg()); (c.units||[]).forEach(u=>{ if(u.id===f.dataset.id) u.name=n.slice(0,30); }); const ok=await Store.setConfig(c); if(ok) toast('Unidade renomeada.'); },
   async clubName(f){ if(!isAdmin(me())) return; const n=String(new FormData(f).get('name')||'').trim(); if(!n) return; const c=clone(cfg()); c.name=n.slice(0,60); const ok=await Store.setConfig(c); if(ok) toast('Nome do clube salvo.'); },
-  async profile(f){ const m=me(); const d=new FormData(f); const patch={name:String(d.get('name')||'').trim()||m.name,birth:String(d.get('birth')||'')||null};
+  async profile(f){ const m=me(); const d=new FormData(f);
+    if(Store.base==='api'&&!Store.demo){
+      const opt=k=>String(d.get(k)||'').trim()||null;
+      const body={name:String(d.get('name')||'').trim()||m.name,birth:opt('birth'),email:opt('email'),phone:opt('phone'),city:opt('city'),state:opt('state'),guardianName:opt('guardianName'),guardianPhone:opt('guardianPhone')};
+      const unit=opt('unit');
+      try{
+        const r=await Api.patch('/auth/me',body); Srv.user=r.user;
+        if(!(m.role==='desbravador'&&m.unit)&&unit!==(m.unit||null)) await Api.patch('/clubs/'+Srv.club.id+'/members/'+m.id,{unitId:unit});
+        await Srv.load(Srv.club.id); App.formErr=''; toast('Perfil salvo.'); render();
+      }catch(e){ App.formErrFor='profile'; formErr(e.message); }
+      return;
+    } const patch={name:String(d.get('name')||'').trim()||m.name,birth:String(d.get('birth')||'')||null};
     if(!(m.role==='desbravador'&&m.unit)) patch.unit=String(d.get('unit')||'')||null;
     const ok=await Store.patchMember(m.id,patch); if(ok){ App.formErr=''; toast('Perfil salvo.'); render(); } },
   async password(f){ const m=me(); const d=new FormData(f); const cur=String(d.get('cur')||''), pw=String(d.get('pw')||'');
+    if(Store.base==='api'&&!Store.demo){
+      App.formErrFor='password';
+      if(pw.length<8) return formErr('A nova senha precisa de pelo menos 8 caracteres.');
+      try{ await Api.post('/auth/password',{current:cur,password:pw}); App.formErr=''; f.reset(); toast('Senha trocada. Suas outras sessões foram encerradas.'); render(); }
+      catch(e){ formErr(e.message); }
+      return;
+    }
     if((await hashPw(cur,m.salt))!==m.hash){ App.formErrFor='password'; return formErr('A senha atual não confere.'); }
     if(pw.length<6){ App.formErrFor='password'; return formErr('A nova senha precisa de pelo menos 6 caracteres.'); }
     const salt=randHex(16); const ok=await Store.patchMember(m.id,{salt:salt,hash:await hashPw(pw,salt)}); if(ok){ App.formErr=''; f.reset(); toast('Senha trocada.'); render(); } }
 };
+/* ---------- formulários do modo servidor ---------- */
+const val=(d,k)=>{ const v=String(d.get(k)||'').trim(); return v||undefined; };
+async function afterLogin(r){
+  Api.setToken(r.token); App.authErr=''; App.busy=false; App.authTab='login';
+  await Srv.loadMe();
+  const act=Srv.clubs.filter(c=>c.status==='ativo');
+  const last=act.find(c=>c.club.id===Srv.clubId)||(act.length===1?act[0]:null);
+  if(last) await Srv.open(last.club.id); else render();
+}
+Object.assign(Forms,{
+  async apiLogin(f){ const d=new FormData(f); App.busy=true; App.authErr=''; render();
+    try{ await afterLogin(await Api.post('/auth/login',{username:String(d.get('user')||'').trim(),password:String(d.get('pw')||'')})); }
+    catch(e){ authErr(e.status===401?'Usuário ou senha incorretos.':e.message); } },
+  async apiSignup(f){ const d=new FormData(f);
+    const body={name:val(d,'name'),username:normUser(d.get('user')),password:String(d.get('pw')||''),email:val(d,'email'),birth:val(d,'birth'),phone:val(d,'phone'),city:val(d,'city'),state:val(d,'state'),guardianName:val(d,'guardianName'),guardianPhone:val(d,'guardianPhone')};
+    if(!validUser(body.username)) return authErr('Usuário deve ter de 3 a 24 caracteres: letras, números, ponto ou traço.');
+    if(body.password.length<8) return authErr('A senha precisa de pelo menos 8 caracteres.');
+    App.busy=true; App.authErr=''; render();
+    try{ await afterLogin(await Api.post('/auth/register',body)); toast('Conta criada! Agora entre no seu clube ou crie um.','gold'); }
+    catch(e){ authErr(e.status===409?'Esse usuário ou e-mail já está em uso. Escolha outro.':e.message); } },
+  async createClub(f){ const d=new FormData(f); App.busy=true; App.formErr=''; render();
+    try{ const r=await Api.post('/clubs',{name:val(d,'name'),church:val(d,'church')||null,region:val(d,'region')||null}); App.busy=false;
+      await Srv.loadMe(); await Srv.open(r.club.id); burst(); toast('Clube criado! Você tem 14 dias grátis para experimentar.','gold'); }
+    catch(e){ App.busy=false; formErr(e.message); } },
+  async joinClub(f){ const d=new FormData(f); App.busy=true; App.formErr=''; render();
+    try{ const r=await Api.post('/clubs/join',{code:String(d.get('code')||'').trim().toUpperCase(),role:String(d.get('role')||'desbravador')}); App.busy=false;
+      await Srv.loadMe();
+      if(r.membership.status==='ativo'){ await Srv.open(r.club.id); toast('Bem-vindo ao '+r.club.name+'!','gold'); }
+      else { render(); toast('Pedido enviado. A diretoria do '+r.club.name+' precisa aprovar sua entrada.'); } }
+    catch(e){ App.busy=false; formErr(e.status===404?'Código não encontrado. Confira com a diretoria do clube.':e.status===409?'Você já faz parte deste clube.':e.message); } }
+});
 function authErr(msg){ App.busy=false; App.authErr=msg; render(); }
 function formErr(msg){ App.formErr=msg; render(); }
 
