@@ -24,4 +24,11 @@ docker compose up --build
 
 Quando o `index.html` é aberto pelo servidor, ele entra no **modo servidor**: login, cadastro com dados pessoais e a tela "Meus clubes" (criar um clube ou entrar com o código de convite), com os dados vindos da API. Aberto como artefato ou arquivo solto, continua funcionando como antes.
 
-No modo servidor, tudo o que o app grava (cartão, caderno de especialidades, aprovações, membros, unidades e contas pendentes) vai para a API. A tela muda na hora; se o servidor recusar (por exemplo, com a assinatura vencida), a mudança é desfeita e o motivo aparece. Na aba Gestão → Clube a diretoria encontra o código de convite.
+No modo servidor, tudo o que o app grava (cartão, caderno de especialidades, aprovações, membros, unidades e contas pendentes) vai para a API. A tela muda na hora; se o servidor recusar (por exemplo, com a assinatura vencida), a mudança é desfeita e o motivo aparece. Na aba Gestão → Clube a diretoria encontra o código e o link de convite (com botão para enviar pelo WhatsApp).
+
+O administrador do clube tem ainda, na Gestão:
+- **Aparência:** 13 cores com prévia ao vivo no app inteiro, combinações prontas, aviso quando algum texto fica difícil de ler e envio do logo.
+- **Assinatura:** plano mensal ou anual, dados de cobrança (CPF/CNPJ), fatura em aberto, histórico e cancelamento da renovação.
+- **Passar a administração** para outra pessoa da liderança (aba Clube).
+
+O link de convite (`/?clube=<endereço>&codigo=<código>`) já abre a tela de entrada com o nome, o logo e as cores do clube e deixa o código preenchido.

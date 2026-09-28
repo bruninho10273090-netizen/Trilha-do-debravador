@@ -396,6 +396,34 @@ button.tile{cursor:pointer}
 .loading{flex:1;display:grid;place-items:center;gap:14px;padding:40px 16px;text-align:center}
 .loading .patch{animation:spin 2.4s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* marca do clube, aparência e assinatura (modo servidor) */
+.club-logo{width:36px;height:36px;object-fit:contain;border-radius:9px;background:#fff;padding:2px;flex:none}
+.club-logo.lg{width:72px;height:72px;border-radius:14px;padding:4px;border:1px solid var(--line)}
+.li .club-logo{width:36px;height:36px;border:1px solid var(--line)}
+.logo-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.logo-empty{width:72px;height:72px;border-radius:14px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);flex:none}
+.presets{display:flex;gap:8px;flex-wrap:wrap}
+.preset{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px 5px 5px;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.preset i{width:22px;height:22px;border-radius:50%;display:block;box-shadow:inset 0 0 0 3px var(--pc2)}
+.tgroups{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.tgroup{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;align-content:start;background:var(--surface)}
+.tgroup h4{margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.swatch{display:grid;grid-template-columns:44px minmax(0,1fr) 92px;gap:10px;align-items:center}
+.swatch input[type=color]{width:44px;height:40px;padding:0;border:1px solid var(--line);border-radius:10px;background:none;cursor:pointer}
+.swatch input[type=color]::-webkit-color-swatch-wrapper{padding:3px}
+.swatch input[type=color]::-webkit-color-swatch{border:0;border-radius:7px}
+.swatch label{font-size:13.5px;font-weight:600}
+.swatch .hex{min-height:38px;padding:6px 8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;text-transform:uppercase}
+.warnlist{margin:0;padding:10px 12px 10px 30px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:13.5px;font-weight:600;display:grid;gap:4px}
+.plans{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.plan{position:relative;display:grid;gap:4px;border:1.5px solid var(--line);border-radius:12px;padding:14px 14px 14px 44px;cursor:pointer;background:var(--surface)}
+.plan input{position:absolute;left:14px;top:17px;accent-color:var(--pine);width:18px;height:18px}
+.plan:has(input:checked){border-color:var(--pine);box-shadow:inset 0 0 0 1px var(--pine)}
+.plan strong{font-size:15px}
+.plan .price{font-family:var(--f-display);font-size:26px;font-weight:700;line-height:1.1}
+.plan .price small{font-family:var(--f-body);font-size:13px;font-weight:600;color:var(--muted)}
+.subhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.invite-link{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -896,8 +924,11 @@ const Srv={
   reset(){ this.user=null; this.clubs=[]; this.leaveClub(); },
   leaveClub(){ this.club=null; this.info=null; App.uid=null; Store.real={config:null,members:{},notes:{},answers:{}}; },
   async boot(){
+    await this.readInvite();
     if(Api.token){ try{ await this.loadMe(); }catch(e){ if(e.status!==401) toast(e.message,'bad'); } }
-    const c=this.user&&this.clubs.find(x=>x.club.id===this.clubId&&x.status==='ativo');
+    const want=this.pub?this.pub.club.id:this.clubId;
+    const c=this.user&&this.clubs.find(x=>x.club.id===want&&x.status==='ativo');
+    if(c&&this.pub) this.clearInvite();
     if(c){ try{ await this.load(c.club.id); }catch(e){ this.forget(); } }
     Store.ready=true; changed();
   },
@@ -946,6 +977,23 @@ const Srv={
   }
 };
 const DEFAULT_RET='Precisa de ajustes. Converse com a liderança.';
+Object.assign(Srv,{
+  pub:null, invite:null,
+  async loadSub(){
+    App.subLoading=true; const id=Srv.club.id;
+    try{ const [a,b]=await Promise.all([Api.get('/clubs/'+id+'/subscription'),Api.get('/plans')]); App.sub=Object.assign(a,{plans:b.plans,clubId:id}); }
+    catch(e){ toast(e.message,'bad'); App.gestTab='clube'; }
+    App.subLoading=false; render();
+  },
+  /* link de convite: /?clube=<endereço>&codigo=<código> mostra o clube na entrada e já preenche o código */
+  async readInvite(){
+    const q=new URLSearchParams(location.search), slug=q.get('clube'), code=q.get('codigo');
+    if(code) this.invite=code.trim().toUpperCase().slice(0,12);
+    if(slug){ try{ this.pub=await Api.get('/public/clubs/'+encodeURIComponent(slug)); }catch(e){ this.pub=null; } }
+    if(this.invite&&!Api.token) App.authTab='signup';
+  },
+  clearInvite(){ this.invite=null; this.pub=null; try{ history.replaceState(null,'',location.pathname); }catch(e){} }
+});
 Object.assign(Srv,{
   q:Promise.resolve(), pending:0, rt:0,
   memberPath(id){ return '/clubs/'+this.club.id+'/members/'+encodeURIComponent(id); },
@@ -1002,6 +1050,64 @@ Object.assign(Srv,{
     }
   }
 });
+/* ---------- cores do clube: chave, variável CSS, padrão, rótulo, grupo ---------- */
+const THEME=[
+ ['background','--bg','#EDF0E7','Fundo da página','Página'],
+ ['surface','--surface','#FAFBF6','Fundo dos cartões','Página'],
+ ['surfaceAlt','--surface-2','#E3E8DA','Fundo secundário','Página'],
+ ['border','--line','#D1D8C8','Bordas','Página'],
+ ['text','--ink','#15231B','Texto','Texto'],
+ ['muted','--muted','#56655B','Texto secundário','Texto'],
+ ['primary','--pine','#1F5A3C','Cor dos botões','Botões'],
+ ['onPrimary','--on-pine','#F4F8F2','Texto dos botões','Botões'],
+ ['header','--bar','#173F2B','Barra do topo','Barra do topo'],
+ ['onHeader','--on-bar','#EAF2EC','Texto da barra do topo','Barra do topo'],
+ ['accent','--gold','#B8820C','Destaque (XP, insígnias)','Destaque'],
+ ['accentSoft','--gold-bg','#F5E6BD','Fundo de destaque','Destaque'],
+ ['onAccentSoft','--gold-ink','#583C00','Texto sobre o destaque','Destaque']];
+const THEME_LABEL={}; THEME.forEach(x=>THEME_LABEL[x[0]]=x[3]);
+const THEME_PAIRS=[['text','background',4.5],['text','surface',4.5],['muted','surface',3],['onPrimary','primary',4.5],['onHeader','header',4.5],['onAccentSoft','accentSoft',4.5]];
+const PRESETS=[
+ {n:'Verde Trilha',t:{}},
+ {n:'Azul',t:{background:'#EAEFF6',surface:'#FAFCFE',surfaceAlt:'#DDE5F0',border:'#CBD5E3',text:'#14213D',muted:'#4F5D75',primary:'#1E4E8C',header:'#163A66',onHeader:'#EAF1FA'}},
+ {n:'Vinho',t:{background:'#F4EDEC',surface:'#FDF9F8',surfaceAlt:'#EBDFDD',border:'#DCCBC8',text:'#2A1215',muted:'#6B4E52',primary:'#7A1F2B',header:'#5A1620',onHeader:'#FBEDEE'}},
+ {n:'Grafite',t:{background:'#ECEEF0',surface:'#FAFBFC',surfaceAlt:'#E0E4E8',border:'#CDD3D9',text:'#161B20',muted:'#56606A',primary:'#2F3A45',header:'#1F272E',onHeader:'#EEF1F4',accent:'#C0620E'}}
+];
+const resolveTheme=c=>{ const o={}; THEME.forEach(x=>o[x[0]]=(c&&c[x[0]])||x[2]); return o; };
+/* guarda só o que difere do padrão */
+const trimTheme=c=>{ const o={}; THEME.forEach(x=>{ const v=c&&c[x[0]]; if(v&&v.toUpperCase()!==x[2]) o[x[0]]=v.toUpperCase(); }); return o; };
+function lum(h){ const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)); return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; }
+function contrastOf(a,b){ const x=lum(a), y=lum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+const themeWarnings=t=>THEME_PAIRS.filter(p=>contrastOf(t[p[0]],t[p[1]])<p[2]).map(p=>THEME_LABEL[p[0]]+' sobre '+THEME_LABEL[p[1]].toLowerCase()+' fica difícil de ler.');
+/* aplica as cores do clube no app inteiro (e força o modo claro, para as cores do clube valerem sempre) */
+function applyTheme(custom){
+  let el=document.getElementById('club-theme');
+  if(!custom||!Object.keys(custom).length){ if(el) el.remove(); return; }
+  const t=resolveTheme(custom);
+  const css=':root,:root[data-theme="dark"],:root:not([data-theme="light"]){color-scheme:light;'+THEME.map(x=>x[1]+':'+t[x[0]]).join(';')+'}';
+  if(!el){ el=document.createElement('style'); el.id='club-theme'; document.body.appendChild(el); }
+  if(el.textContent!==css) el.textContent=css;
+}
+function currentTheme(){
+  if(!Store.api()) return null;
+  if(Srv.club){ if(App.themeDraft&&App.view==='gestao'&&App.gestTab==='aparencia') return App.themeDraft; return Srv.info&&Srv.info.branding&&Srv.info.branding.customTheme; }
+  return Srv.pub&&Srv.pub.branding&&Srv.pub.branding.customTheme;
+}
+const clubLogoUrl=()=>Store.api()&&Srv.info&&Srv.info.branding&&Srv.info.branding.logoUrl;
+const clubMark=()=>{ const u=clubLogoUrl(); return u?'<img class="club-logo" src="'+esc(u)+'" alt="">':BRAND; };
+const isClubAdmin=()=>Store.api()&&!!(Srv.info&&Srv.info.isAdmin);
+const brl=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtDay=v=>v?new Date(v).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+const SUB_STATE={trial:'Teste grátis',ativa:'Ativa',em_atraso:'Pagamento em atraso',cancelada:'Renovação cancelada',expirada:'Vencida'};
+/* envia um arquivo cru (logo), com o token */
+Api.upload=async function(path,file){
+  let res;
+  try{ res=await fetch('/api'+path,{method:'PUT',headers:{authorization:'Bearer '+this.token,'content-type':file.type},body:file}); }
+  catch(e){ throw new Error('Sem conexão com o servidor. Tente de novo.'); }
+  const data=await res.json().catch(()=>null);
+  if(!res.ok) throw new Error((data&&data.message)||'Não foi possível enviar o arquivo.');
+  return data;
+};
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) Srv.refresh(); });
 setInterval(()=>{ if(!document.hidden) Srv.refresh(); },60000);
 
@@ -1040,7 +1146,7 @@ function lvlPatch(s,size){return '<div class="patch '+(size||'lg')+'" style="--p
 
 /* ---------- toasts e confete ---------- */
 const toastBox=document.getElementById('toasts');
-function toast(msg,kind){const t=document.createElement('div'); t.className='toast '+(kind||''); t.textContent=msg; toastBox.appendChild(t); setTimeout(()=>{t.classList.add('out'); setTimeout(()=>t.remove(),320);},3400);}
+function toast(msg,kind){while(toastBox.children.length>=3) toastBox.firstChild.remove(); const t=document.createElement('div'); t.className='toast '+(kind||''); t.textContent=msg; toastBox.appendChild(t); setTimeout(()=>{t.classList.add('out'); setTimeout(()=>t.remove(),320);},3400);}
 const fx=document.getElementById('fx'); let parts=[],raf=0;
 function burst(x,y,n){
   if(reduceMotion) return; const ctx=fx.getContext('2d'); const dpr=window.devicePixelRatio||1;
@@ -1071,6 +1177,7 @@ document.addEventListener('focusout',()=>{ if(deferred) setTimeout(flushDeferred
 
 function render(){
   deferred=false;
+  applyTheme(currentTheme());
   if(!Store.ready){ app.innerHTML='<div class="loading"><div>'+'<div class="patch lg" style="--pc:#B8820C">'+ic('compass')+'</div>'+'</div><div><h2>Abrindo o clube…</h2><p class="muted small">'+(Store.slow?'Está demorando mais que o normal. Verifique sua conexão.':'Carregando cartões e membros.')+'</p></div></div>'; return; }
   if(Store.base==='api'&&!Store.demo){
     if(Srv.loading){ app.innerHTML='<div class="loading"><div><div class="patch lg" style="--pc:#B8820C">'+ic('compass')+'</div></div><div><h2>Abrindo o clube…</h2><p class="muted small">Carregando cartões e membros.</p></div></div>'; return; }
@@ -1088,10 +1195,22 @@ function banner(){
   if(Store.demo){ const who=me(); const kid=who&&who.role==='desbravador';
     return '<div class="banner"><div class="banner-in"><span>Demonstração com dados de exemplo. Nada aqui é salvo.</span><button class="btn gold" data-act="demoAs" data-id="'+(kid?'ana.diretora':'lucas')+'">Ver como '+(kid?'diretora':'desbravador')+'</button><button class="btn ghost" data-act="demoExit">Sair da demonstração</button></div></div>'; }
   if(Store.readOnly) return '<div class="banner bad"><div class="banner-in">Você está só visualizando: sua conta não tem permissão de edição neste app. Peça ao dono acesso de edição para salvar.</div></div>';
+  if(Store.api()) return subBanner();
   if(Store.base==='local') return '<div class="banner"><div class="banner-in">'+ic('device')+'<span>Modo local: os dados ficam salvos só neste navegador.</span></div></div>';
   return '';
 }
 
+function subBanner(){
+  const s=Srv.info&&Srv.info.subscription; if(!s) return '';
+  const admin=isClubAdmin(), end=s.endsAt?Date.parse(s.endsAt):0, days=Math.max(0,Math.ceil((end-Date.now())/864e5));
+  const btn=t=>admin?'<button class="btn gold" data-act="go" data-view="gestao" data-gtab="assinatura">'+t+'</button>':'';
+  if(!s.active) return '<div class="banner bad"><div class="banner-in">'+ic('lock')+'<span>'+(admin?'A assinatura do clube venceu. Tudo continua visível, mas nada pode ser salvo até renovar.':'A assinatura do clube venceu: por enquanto dá só para ver. Avise a administração do clube.')+'</span>'+btn('Renovar')+'</div></div>';
+  if(!admin) return '';
+  if(s.state==='trial') return '<div class="banner"><div class="banner-in">'+ic('clock')+'<span>Teste grátis: '+(days<=1?'termina hoje':'faltam '+days+' dias')+'.</span>'+btn('Assinar')+'</div></div>';
+  if(s.state==='em_atraso') return '<div class="banner bad"><div class="banner-in">'+ic('clock')+'<span>O período pago terminou em '+fmtDay(end)+'. Renove em até 5 dias para o clube não ficar só para leitura.</span>'+btn('Renovar')+'</div></div>';
+  if(s.state==='cancelada') return '<div class="banner"><div class="banner-in"><span>Renovação cancelada: o clube funciona até '+fmtDay(end)+'.</span>'+btn('Ver assinatura')+'</div></div>';
+  return '';
+}
 function pendingItems(unitF){
   const out=[]; kids().forEach(m=>{ if(unitF&&unitF!=='all'&&m.unit!==unitF) return; const p=m.progress||{}; Object.keys(p).forEach(k=>{const e=p[k]; if(e&&e.s==='enviado'&&ITEM[k]) out.push({m:m,it:ITEM[k],e:e});}); });
   out.sort((a,b)=>(a.e.at||0)-(b.e.at||0)); return out;
@@ -1122,7 +1241,7 @@ function renderShell(m){
   const views={home:viewHome,classes:viewClasses,aprov:viewAprov,rank:viewRank,gestao:viewGestao,badges:viewBadges,perfil:viewPerfil,esp:viewEsp,espclub:viewEspClub};
   const body=(views[App.view]||viewHome)(m);
   app.innerHTML=banner()+
-   '<header class="bar"><div class="bar-in"><div class="brand">'+BRAND+'<div style="min-width:0"><div class="brand-name">'+esc(cfg().name||'Clube de Desbravadores')+'</div><span class="brand-sub">Trilha das classes</span></div></div>'+
+   '<header class="bar"><div class="bar-in"><div class="brand">'+clubMark()+'<div style="min-width:0"><div class="brand-name">'+esc(cfg().name||'Clube de Desbravadores')+'</div><span class="brand-sub">Trilha das classes</span></div></div>'+
    '<button class="me-chip" data-act="go" data-view="perfil" aria-label="Meu perfil">'+avHtml(m,'sm')+'<span class="me-txt"><strong>'+esc(firstName(m.name))+'</strong><small>'+esc(ROLES[m.role]||'')+'</small></span></button></div>'+
    '<nav class="tabs" aria-label="Seções">'+tabs.map(t=>'<button class="tab'+(App.view===t[0]||t[4]?' on':'')+'" data-act="go" data-view="'+t[0]+'"'+(App.view===t[0]?' aria-current="page"':'')+'>'+ic(t[2])+'<span>'+t[1]+'</span>'+(t[3]?'<span class="dot num">'+t[3]+'</span>':'')+'</button>').join('')+'</nav></header>'+
    '<main class="wrap">'+body+'</main>'+overlayHtml();
@@ -1430,7 +1549,7 @@ function viewBadges(m){
 
 /* ---------- GESTÃO ---------- */
 function viewGestao(m){
-  const admin=isAdmin(m); const tabs=[['membros','Membros']].concat(admin?[['novo','Cadastrar'],['unidades','Unidades'],['pendentes','Contas pendentes'],['clube','Clube']]:[]);
+  const admin=isAdmin(m); const tabs=[['membros','Membros']].concat(admin?[['novo','Cadastrar'],['unidades','Unidades'],['pendentes','Contas pendentes'],['clube','Clube']]:[]).concat(isClubAdmin()?[['aparencia','Aparência'],['assinatura','Assinatura']]:[]);
   if(!tabs.some(t=>t[0]===App.gestTab)) App.gestTab='membros';
   const pendN=members().filter(x=>x.status==='pendente').length;
   let body='';
@@ -1438,6 +1557,8 @@ function viewGestao(m){
   else if(App.gestTab==='novo') body=gestNovo();
   else if(App.gestTab==='unidades') body=gestUnidades();
   else if(App.gestTab==='pendentes') body=gestPendentes();
+  else if(App.gestTab==='aparencia') body=gestAparencia();
+  else if(App.gestTab==='assinatura') body=gestAssinatura();
   else body=gestClube();
   return '<div class="page-head"><div><h1>Gestão do clube</h1><p class="muted">'+(admin?'Membros, unidades e acessos.':'Consulte os membros e abra o cartão de cada desbravador.')+'</p></div></div>'+
    '<div class="seg" role="group">'+tabs.map(t=>'<button class="'+(App.gestTab===t[0]?'on':'')+'" data-act="gestTab" data-v="'+t[0]+'">'+t[1]+(t[0]==='pendentes'&&pendN?' ('+pendN+')':'')+'</button>').join('')+'</div>'+body;
@@ -1493,16 +1614,83 @@ function gestPendentes(){
   const list=members().filter(x=>x.status==='pendente');
   return '<section class="card"><div class="card-h"><h3>Contas da liderança aguardando aprovação</h3></div>'+(list.length?'<div class="list">'+list.map(x=>'<div class="li" style="flex-wrap:wrap">'+avHtml(x)+'<div class="grow"><strong>'+esc(x.name)+'</strong><span class="sub">@'+esc(x.username)+' · pediu acesso como '+esc((ROLES[x.role]||'').toLowerCase())+' · '+rel(x.createdAt)+'</span></div><div class="row"><button class="btn sm ghost" data-act="denyAcc" data-id="'+esc(x.id)+'">Recusar</button><button class="btn sm" data-act="okAcc" data-id="'+esc(x.id)+'">'+ic('check')+'Aprovar</button></div></div>').join('')+'</div>':'<div class="empty"><strong>Nenhuma conta pendente.</strong>Quando alguém se cadastrar como liderança, o pedido aparece aqui.</div>')+'</section>';
 }
+/* ---------- ADMINISTRADOR DO CLUBE: aparência ---------- */
+function gestAparencia(){
+  const b=Srv.info.branding, saved=b.customTheme||{}, draft=App.themeDraft||saved, t=resolveTheme(draft);
+  const dirty=!!App.themeDraft&&JSON.stringify(trimTheme(App.themeDraft))!==JSON.stringify(trimTheme(saved));
+  const warns=themeWarnings(t), groups=THEME.map(x=>x[4]).filter((g,i,a)=>a.indexOf(g)===i);
+  const logo='<section class="card"><div class="card-h"><h3>Logo do clube</h3></div><div class="logo-row">'+
+    (b.logoUrl?'<img class="club-logo lg" src="'+esc(b.logoUrl)+'" alt="Logo atual do clube">':'<div class="logo-empty" aria-hidden="true">'+ic('flag')+'</div>')+
+    '<div style="display:grid;gap:8px"><div class="row"><label class="btn" for="logo-file">'+ic('plus')+(b.logoUrl?'Trocar logo':'Enviar logo')+'</label><input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp" data-chg="logo" hidden>'+
+    (b.logoUrl?'<button class="btn ghost" data-act="logoRemove">Remover</button>':'')+'</div><span class="hint">PNG, JPEG ou WebP de até 1 MB. Imagens quadradas ficam melhores. Aparece no topo do app e na tela de entrada do clube.</span></div></div></section>';
+  const presets='<div class="presets" role="group" aria-label="Combinações prontas">'+PRESETS.map((p,i)=>{ const pt=resolveTheme(p.t); return '<button class="preset" data-act="themePreset" data-i="'+i+'"><i style="background:'+pt.primary+';--pc2:'+pt.background+'"></i>'+esc(p.n)+'</button>'; }).join('')+'</div>';
+  const colors='<div class="tgroups">'+groups.map(g=>'<fieldset class="tgroup" style="margin:0"><h4>'+esc(g)+'</h4>'+THEME.filter(x=>x[4]===g).map(x=>
+    '<div class="swatch"><input type="color" id="th-'+x[0]+'" value="'+t[x[0]].toLowerCase()+'" data-theme-key="'+x[0]+'" aria-label="'+esc(x[3])+'"><label for="th-'+x[0]+'">'+esc(x[3])+'</label><input class="input hex" data-theme-hex="'+x[0]+'" value="'+t[x[0]]+'" maxlength="7" aria-label="Código da cor: '+esc(x[3])+'" spellcheck="false"></div>').join('')+'</fieldset>').join('')+'</div>';
+  return logo+'<section class="card"><div class="card-h"><h3>Cores</h3>'+(dirty?'<span class="pill warn">Não salvo</span>':'')+'</div>'+
+   '<p class="muted small" style="margin-bottom:12px">Enquanto você escolhe, o app todo já mostra as cores novas. Os outros membros só veem depois que você salvar.</p>'+
+   '<div style="display:grid;gap:14px">'+presets+colors+
+   (warns.length?'<ul class="warnlist" role="status">'+warns.map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul>':'')+
+   '<div class="row"><button class="btn" data-act="themeSave"'+(dirty?'':' disabled')+'>Salvar cores</button>'+(dirty?'<button class="btn ghost" data-act="themeDiscard">Descartar mudanças</button>':'')+
+   (Object.keys(trimTheme(draft)).length?'<button class="btn ghost" data-act="themeDefault">Voltar ao padrão</button>':'')+'</div></div></section>';
+}
+
+/* ---------- ADMINISTRADOR DO CLUBE: assinatura ---------- */
+function gestAssinatura(){
+  const d=App.sub;
+  if(!d||d.clubId!==Srv.club.id){ if(!App.subLoading) Srv.loadSub(); return '<section class="card empty"><strong>Carregando a assinatura…</strong></section>'; }
+  const sub=d.subscription, plan=d.plan, pend=d.invoices.find(i=>i.status==='pendente');
+  const monthly=d.plans.find(p=>p.interval==='mensal');
+  const stPill=sub.active?(sub.state==='em_atraso'?'warn':sub.state==='trial'?'gold':'ok'):'warn';
+  const status='<section class="card"><div class="subhead"><div class="grow" style="flex:1;min-width:220px"><p class="eyebrow">Situação</p><h2 style="margin-top:4px">'+esc(SUB_STATE[sub.state]||sub.state)+' <span class="pill '+stPill+'" style="vertical-align:4px">'+(sub.active?'funcionando':'só leitura')+'</span></h2>'+
+    '<p class="muted" style="margin-top:6px">'+(sub.state==='trial'?'O teste grátis vai até '+fmtDay(sub.endsAt)+'.':sub.endsAt?(sub.active?'Pago até ':'Venceu em ')+fmtDay(sub.endsAt)+'.':'Nenhum período pago ainda.')+(plan?' Plano '+esc(plan.name)+' · '+brl(plan.priceCents)+(plan.interval==='anual'?' por ano':' por mês')+'.':'')+'</p></div>'+
+    (sub.status==='ativa'&&!sub.cancelAtPeriodEnd?'<button class="btn ghost" data-act="subCancel">Cancelar renovação</button>':'')+
+    (sub.cancelAtPeriodEnd?'<button class="btn" data-act="subResume">Retomar renovação</button>':'')+'</div></section>';
+  const invoice=pend?'<section class="card" style="border-color:color-mix(in srgb,var(--gold) 55%,var(--line))"><div class="card-h"><h3>Fatura em aberto</h3><span class="pill gold">Aguardando pagamento</span></div>'+
+    '<p><b class="num" style="font-family:var(--f-display);font-size:26px">'+brl(pend.amountCents)+'</b> <span class="muted">· vence em '+fmtDay(pend.dueAt)+'</span></p>'+
+    (pend.paymentUrl?'<p style="margin-top:10px"><a class="btn gold" href="'+esc(pend.paymentUrl)+'" target="_blank" rel="noopener">Pagar agora</a></p>':'<p class="muted small" style="margin-top:8px">Faça o pagamento combinado com a administração do Trilha (PIX ou transferência). Assim que ele for confirmado, o período é liberado e esta fatura aparece como paga.</p>')+'</section>':'';
+  const planCards=d.plans.map((p,i)=>{ const per=p.interval==='anual'?'/ano':'/mês'; let extra='';
+    if(p.interval==='anual'&&monthly){ const save=Math.round((1-p.priceCents/(monthly.priceCents*12))*100); extra='<span class="muted small">Sai por '+brl(Math.round(p.priceCents/12))+' por mês'+(save>0?' · economia de '+save+'%':'')+'</span>'; }
+    else extra='<span class="muted small">Renova todo mês</span>';
+    const cur=App.subPlan||(pend&&pend.planId)||(plan&&plan.id)||d.plans[0].id; const sel=cur===p.id;
+    return '<label class="plan"><input type="radio" name="planId" value="'+esc(p.id)+'"'+(sel?' checked':'')+'><strong>'+esc(p.name)+'</strong><span class="price num">'+brl(p.priceCents)+' <small>'+per+'</small></span>'+extra+(p.maxMembers?'<span class="muted small">Até '+p.maxMembers+' membros</span>':'<span class="muted small">Membros ilimitados</span>')+'</label>'; }).join('');
+  const u=Srv.user||{};
+  const form='<section class="card"><div class="card-h"><h3>'+(sub.status==='ativa'?'Renovar ou trocar de plano':'Assinar')+'</h3></div><form data-form="checkout" style="display:grid;gap:14px">'+
+    '<div class="plans" role="radiogroup" aria-label="Plano">'+planCards+'</div>'+
+    '<div class="grid2"><div class="field"><label for="bl-name">Nome para a cobrança</label><input id="bl-name" name="billingName" class="input" required maxlength="120" value="'+esc(sub.billingName||u.name||'')+'"><span class="hint">Pode ser você, a igreja ou a associação.</span></div>'+
+    '<div class="field"><label for="bl-doc">CPF ou CNPJ</label><input id="bl-doc" name="billingDocument" class="input" required inputmode="numeric" value="'+esc(sub.billingDocument||'')+'" placeholder="000.000.000-00"></div></div>'+
+    '<div class="field"><label for="bl-email">E-mail para a fatura</label><input id="bl-email" name="billingEmail" type="email" class="input" required value="'+esc(sub.billingEmail||u.email||'')+'"></div>'+
+    (App.formErr&&App.formErrFor==='checkout'?'<p class="err" role="alert">'+esc(App.formErr)+'</p>':'')+
+    '<div><button class="btn" type="submit"'+(App.busy?' disabled':'')+'>'+(App.busy?'Gerando…':pend?'Gerar nova fatura':'Gerar fatura')+'</button>'+(pend?'<span class="hint" style="margin-left:10px">A fatura em aberto será substituída.</span>':'')+'</div></form></section>';
+  const hist=d.invoices.filter(i=>i.status!=='pendente');
+  const history=hist.length?'<section class="card"><div class="card-h"><h3>Faturas anteriores</h3></div><div class="list">'+hist.map(i=>{ const p=d.plans.find(x=>x.id===i.planId);
+    return '<div class="li"><div class="grow"><strong class="num">'+brl(i.amountCents)+'</strong><span class="sub">'+(p?esc(p.name)+' · ':'')+'emitida em '+fmtDay(i.createdAt)+(i.paidAt?' · paga em '+fmtDay(i.paidAt):'')+(i.periodEnd?' · vale até '+fmtDay(i.periodEnd):'')+'</span></div><span class="pill '+(i.status==='paga'?'ok':'')+'">'+esc(i.status==='paga'?'Paga':i.status==='cancelada'?'Substituída':'Estornada')+'</span></div>'; }).join('')+'</div></section>':'';
+  return status+invoice+form+history;
+}
+
+/* ---------- ADMINISTRADOR DO CLUBE: passar a administração ---------- */
+function transferCard(m){
+  if(!isClubAdmin()) return '';
+  const cands=members().filter(x=>x.id!==m.id&&x.status==='ativo'&&x.role!=='desbravador').sort((a,b)=>String(a.name).localeCompare(String(b.name),'pt-BR'));
+  const to=App.transferTo&&Store.d.members[App.transferTo];
+  return '<section class="card"><div class="card-h"><h3>Administração do clube</h3></div><p class="muted small" style="margin-bottom:12px">Você é o administrador: cuida da assinatura, das cores e do logo. Pode passar essa função para outra pessoa da liderança; você continua no clube com a sua função atual.</p>'+
+   (cands.length?(to?'<div class="row"><span class="err">Passar a administração para '+esc(to.name)+'? Você perde o acesso à assinatura, às cores e ao logo.</span><button class="btn danger" data-act="transferDo">Confirmar</button><button class="btn ghost" data-act="transferCancel">Não</button></div>':
+     '<div class="row"><label for="tr-to" class="eyebrow" style="position:absolute;left:-9999px">Nova pessoa administradora</label><select id="tr-to" class="input" style="flex:1;min-width:200px">'+cands.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(ROLES[x.role]||'')+'</option>').join('')+'</select><button class="btn ghost" data-act="transferAsk">Passar administração</button></div>')
+    :'<p class="hint">Para passar a administração, primeiro alguém da liderança precisa estar ativo no clube.</p>')+'</section>';
+}
+
 function inviteCard(){
   const code=Srv.info&&Srv.info.club&&Srv.info.club.joinCode; if(!code) return '';
   return '<section class="card"><div class="card-h"><h3>Código de convite</h3></div>'+
    '<p class="muted small" style="margin-bottom:12px">Passe este código para quem vai entrar no clube. A pessoa cria a conta e digita o código em "Entrar em um clube". Desbravadores entram na hora; a liderança espera a sua aprovação em Contas pendentes.</p>'+
    '<div class="row"><span class="input num" style="width:auto;font-family:var(--f-display);font-size:24px;letter-spacing:.14em;min-height:auto;padding:8px 16px" aria-label="Código de convite">'+esc(code)+'</span>'+
    '<button class="btn ghost" data-act="copyCode" data-v="'+esc(code)+'">Copiar</button><button class="btn ghost" data-act="rotateCode">Gerar outro código</button></div>'+
-   '<p class="hint" style="margin-top:8px">Gerar outro código invalida o anterior; quem já entrou continua no clube.</p></section>';
+   '<p class="hint" style="margin-top:8px">Gerar outro código invalida o anterior; quem já entrou continua no clube.</p>'+
+   (function(){ const link=location.origin+'/?clube='+encodeURIComponent(Srv.club.slug)+'&codigo='+encodeURIComponent(code); const msg='Entre no '+Srv.club.name+' no Trilha do Desbravador: '+link;
+     return '<div style="margin-top:14px;display:grid;gap:8px"><span class="eyebrow">Link de convite</span><span class="invite-link">'+esc(link)+'</span><div class="row"><button class="btn ghost" data-act="copyCode" data-v="'+esc(link)+'">Copiar link</button><a class="btn ghost" href="https://wa.me/?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener">Enviar pelo WhatsApp</a></div></div>'; })()+
+   '</section>';
 }
 function gestClube(){
-  if(Store.api()) return inviteCard()+'<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="80" required></div><div><button class="btn" type="submit">Salvar</button></div></form></section>';
+  if(Store.api()) return inviteCard()+'<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="80" required></div><div><button class="btn" type="submit">Salvar</button></div></form></section>'+transferCard(me());
   return '<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="60" required></div><div><button class="btn" type="submit">Salvar</button></div></form>'+
   '<div class="mode-note" style="margin-top:18px">'+ic(Store.mode==='cloud'?'cloud':'device')+'<span>'+(Store.mode==='cloud'?'Os dados ficam guardados junto com este app. Quem você convidar com acesso de edição vê e atualiza o mesmo clube.':Store.mode==='demo'?'Você está na demonstração: nada é salvo.':'Os dados estão salvos só neste navegador. Limpar os dados do navegador apaga o clube.')+'</span></div></section>';
 }
@@ -1553,8 +1741,8 @@ function overlayHtml(){
 }
 
 /* ---------- AUTENTICAÇÃO ---------- */
-function authLeft(title){
-  return '<section class="auth-l"><div class="brand" style="flex:none">'+BRAND+'<span class="brand-name">'+esc(title)+'</span></div>'+
+function authLeft(title,logo){
+  return '<section class="auth-l"><div class="brand" style="flex:none">'+(logo?'<img class="club-logo" src="'+esc(logo)+'" alt="">':BRAND)+'<span class="brand-name">'+esc(title)+'</span></div>'+
    '<h1>Cada requisito do cartão vira XP.</h1><p class="lead">A trilha das classes do clube em um só lugar: o desbravador marca o que fez, a liderança aprova e todo mundo acompanha o progresso.</p>'+
    '<ol class="tdots" aria-label="Classes regulares">'+CLASSES.map(x=>'<li style="--cc:'+CLASS_HEX[x.id]+'"><i></i><span>'+x.name+'</span></li>').join('')+'</ol>'+
    '<ul><li>'+ic('check')+'<span>Requisitos das 6 classes regulares e das 6 avançadas, seção por seção</span></li><li>'+ic('check')+'<span>Caderno com '+ESP.length+' especialidades e respostas escritas no próprio app</span></li><li>'+ic('check')+'<span>Níveis, insígnias e ranking por unidade</span></li><li>'+ic('check')+'<span>Fila de aprovação para conselheiros e instrutores</span></li></ul></section>';
@@ -1610,19 +1798,22 @@ function renderAuthApi(){
      '<details class="info"><summary>Responsável (para menores de idade)</summary><div class="grid2" style="margin-top:10px"><div class="field"><label for="sg-gname">Nome do responsável</label><input id="sg-gname" name="guardianName" class="input" maxlength="80"></div><div class="field"><label for="sg-gphone">Celular do responsável</label><input id="sg-gphone" name="guardianPhone" type="tel" class="input" placeholder="(11) 91234-5678"></div></div></details>'+
      err+'<button class="btn block" type="submit"'+(App.busy?' disabled':'')+'>'+(App.busy?'Criando…':'Criar conta')+'</button></form>')+
    '<p class="small muted" style="text-align:center">Só quer conhecer? <button class="linkbtn" data-act="demo">Explorar a demonstração</button></p></div>';
-  app.innerHTML='<div class="auth">'+authLeft('Trilha do Desbravador')+'<section class="auth-r">'+right+'</section></div>';
+  const pub=Srv.pub;
+  const inv=pub?'<div class="mode-note">'+ic('users')+'<span>Você foi convidado para o <b>'+esc(pub.club.name)+'</b>. '+(tab==='login'?'Entre com a sua conta':'Crie a sua conta')+' e depois confirme a entrada no clube.</span></div>':'';
+  app.innerHTML='<div class="auth">'+authLeft(pub?pub.club.name:'Trilha do Desbravador',pub&&pub.branding.logoUrl)+'<section class="auth-r">'+right.replace('<div class="auth-card">','<div class="auth-card">'+inv)+'</section></div>';
 }
 function clubInitials(n){ return initials(String(n||'').replace(/^clube\s+(de\s+desbravadores\s+)?/i,'')); }
 function renderClubs(){
   const u=Srv.user, list=Srv.clubs, e=f=>App.formErr&&App.formErrFor===f?'<p class="err" role="alert">'+esc(App.formErr)+'</p>':'';
   const rows=list.map(c=>{ const ok=c.status==='ativo';
-    return '<div class="li"><span class="av" style="--avc:#173F2B" aria-hidden="true">'+esc(clubInitials(c.club.name))+'</span><div class="grow"><strong>'+esc(c.club.name)+'</strong><span class="sub">'+esc(ROLES[c.role]||'')+(c.isAdmin?' · administrador':'')+'</span></div>'+
+    return '<div class="li">'+(c.club.logoUrl?'<img class="club-logo" src="'+esc(c.club.logoUrl)+'" alt="">':'<span class="av" style="--avc:#173F2B" aria-hidden="true">'+esc(clubInitials(c.club.name))+'</span>')+'<div class="grow"><strong>'+esc(c.club.name)+'</strong><span class="sub">'+esc(ROLES[c.role]||'')+(c.isAdmin?' · administrador':'')+'</span></div>'+
       (ok?'<button class="btn sm" data-act="openClub" data-id="'+esc(c.club.id)+'">Abrir</button>':'<span class="pill warn">'+(c.status==='pendente'?'Aguardando aprovação':'Inativo')+'</span>')+'</div>'; }).join('');
   const body='<div class="page-head"><div><p class="eyebrow">'+greet()+', '+esc(firstName(u.name))+'</p><h1>Meus clubes</h1></div></div>'+
+   (Srv.pub&&Srv.invite?'<div class="mode-note">'+ic('users')+'<span>Convite do <b>'+esc(Srv.pub.club.name)+'</b>: o código já está preenchido abaixo. Escolha se você é desbravador ou da liderança e toque em Entrar no clube.</span></div>':'')+
    '<section class="card">'+(list.length?'<div class="list">'+rows+'</div>':'<div class="empty"><strong>Você ainda não está em nenhum clube.</strong>Entre com o código que a diretoria do seu clube passou, ou crie um clube novo.</div>')+'</section>'+
    '<div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">'+
     '<section class="card"><div class="card-h"><h3>Entrar em um clube</h3></div><form data-form="joinClub" style="display:grid;gap:14px">'+
-     '<div class="field"><label for="jc-code">Código de convite</label><input id="jc-code" name="code" class="input" required autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="Ex.: K7M2Q9XA" style="text-transform:uppercase;letter-spacing:.08em"><span class="hint">A diretoria do clube encontra o código na Gestão.</span></div>'+
+     '<div class="field"><label for="jc-code">Código de convite</label><input id="jc-code" name="code" class="input" required autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="Ex.: K7M2Q9XA" value="'+esc(Srv.invite||'')+'" style="text-transform:uppercase;letter-spacing:.08em"><span class="hint">A diretoria do clube encontra o código na Gestão.</span></div>'+
      '<div class="field"><label for="jc-role">Eu sou</label><select id="jc-role" name="role" class="input"><option value="desbravador">Desbravador(a)</option><option value="conselheiro">Conselheiro(a)</option><option value="instrutor">Instrutor(a)</option><option value="associado">Diretor(a) associado(a)</option></select><span class="hint">Liderança entra depois que a diretoria aprovar.</span></div>'+
      e('joinClub')+'<div><button class="btn" type="submit"'+(App.busy?' disabled':'')+'>Entrar no clube</button></div></form></section>'+
     '<section class="card"><div class="card-h"><h3>Criar um clube</h3></div><form data-form="createClub" style="display:grid;gap:14px">'+
@@ -1729,6 +1920,25 @@ const Act={
   async denyAcc(el){ if(!isAdmin(me())) return; const ok=await Store.delMember(el.dataset.id); if(ok) toast('Pedido recusado.'); },
   async delUnit(el){ if(!isAdmin(me())) return; const c=clone(cfg()); const n=kids().filter(k=>k.unit===el.dataset.id).length; c.units=(c.units||[]).filter(u=>u.id!==el.dataset.id); const ok=await Store.setConfig(c); if(ok) toast(n?'Unidade removida. '+n+' membro'+(n>1?'s ficaram':' ficou')+' sem unidade.':'Unidade removida.'); },
   openClub(el){ Srv.open(el.dataset.id); },
+  themePreset(el){ App.themeDraft=trimTheme(PRESETS[+el.dataset.i].t); render(); },
+  themeDiscard(){ App.themeDraft=null; render(); },
+  themeDefault(){ App.themeDraft={}; render(); },
+  async themeSave(){ if(!isClubAdmin()||!App.themeDraft) return;
+    const saved=Srv.info.branding.customTheme||{}, next=trimTheme(App.themeDraft), body={};
+    THEME.forEach(x=>{ const k=x[0]; if((saved[k]||null)!==(next[k]||null)) body[k]=next[k]||null; });
+    try{ const r=await Api.patch('/clubs/'+Srv.club.id+'/theme',body); Srv.info.branding.customTheme=r.customTheme; Srv.info.branding.theme=r.theme; App.themeDraft=null; render();
+      toast(r.warnings.length?'Cores salvas. Atenção: '+r.warnings.length+' combinação(ões) com pouco contraste.':'Cores salvas. Todo o clube já vê as cores novas.',r.warnings.length?'':'gold'); }
+    catch(e){ toast(e.message,'bad'); } },
+  async logoRemove(){ if(!isClubAdmin()) return;
+    try{ await Api.del('/clubs/'+Srv.club.id+'/logo'); Srv.info.branding.logoUrl=null; toast('Logo removido.'); render(); }catch(e){ toast(e.message,'bad'); } },
+  async subCancel(){ try{ await Api.post('/clubs/'+Srv.club.id+'/subscription/cancel'); toast('Renovação cancelada. O clube continua funcionando até o fim do período pago.'); await Srv.load(Srv.club.id); await Srv.loadSub(); }catch(e){ toast(e.message,'bad'); } },
+  async subResume(){ try{ await Api.post('/clubs/'+Srv.club.id+'/subscription/resume'); toast('Renovação retomada.'); await Srv.load(Srv.club.id); await Srv.loadSub(); }catch(e){ toast(e.message,'bad'); } },
+  transferAsk(){ const sel=document.getElementById('tr-to'); if(sel){ App.transferTo=sel.value; render(); } },
+  transferCancel(){ App.transferTo=null; render(); },
+  async transferDo(){ const id=App.transferTo; if(!id) return;
+    try{ const r=await Api.post('/clubs/'+Srv.club.id+'/transfer',{memberId:id}); App.transferTo=null; App.themeDraft=null; App.sub=null; App.gestTab='clube';
+      await Srv.load(Srv.club.id); await Srv.loadMe(); render(); toast('Agora '+r.admin.name+' é a pessoa administradora do clube.','gold'); }
+    catch(e){ App.transferTo=null; toast(e.message,'bad'); render(); } },
   async copyCode(el){ try{ await navigator.clipboard.writeText(el.dataset.v); toast('Código copiado.'); }catch(e){ toast('Código: '+el.dataset.v); } },
   async rotateCode(){ if(!isAdmin(me())) return; try{ const r=await Api.post('/clubs/'+Srv.club.id+'/join-code'); Srv.info.club.joinCode=r.joinCode; toast('Código novo gerado.'); render(); }catch(e){ toast(e.message,'bad'); } },
   async myClubs(){ Srv.forget(); App.formErr=''; render(); await Srv.loadMe().catch(()=>{}); render(); window.scrollTo({top:0}); },
@@ -1842,6 +2052,7 @@ async function afterLogin(r){
   Api.setToken(r.token); App.authErr=''; App.busy=false; App.authTab='login';
   await Srv.loadMe();
   const act=Srv.clubs.filter(c=>c.status==='ativo');
+  if(Srv.pub){ const mine=act.find(c=>c.club.id===Srv.pub.club.id); if(mine){ Srv.clearInvite(); await Srv.open(mine.club.id); return; } if(Srv.invite){ render(); return; } }
   const last=act.find(c=>c.club.id===Srv.clubId)||(act.length===1?act[0]:null);
   if(last) await Srv.open(last.club.id); else render();
 }
@@ -1860,9 +2071,16 @@ Object.assign(Forms,{
     try{ const r=await Api.post('/clubs',{name:val(d,'name'),church:val(d,'church')||null,region:val(d,'region')||null}); App.busy=false;
       await Srv.loadMe(); await Srv.open(r.club.id); burst(); toast('Clube criado! Você tem 14 dias grátis para experimentar.','gold'); }
     catch(e){ App.busy=false; formErr(e.message); } },
+  async checkout(f){ if(!isClubAdmin()) return; const d=new FormData(f); App.formErrFor='checkout'; App.subPlan=String(d.get('planId')||'');
+    const doc=String(d.get('billingDocument')||'').replace(/\D/g,'');
+    if(doc.length!==11&&doc.length!==14) return formErr('Informe um CPF (11 números) ou CNPJ (14 números).');
+    App.busy=true; App.formErr=''; render();
+    try{ const r=await Api.post('/clubs/'+Srv.club.id+'/subscription',{planId:App.subPlan,billingName:String(d.get('billingName')||'').trim(),billingDocument:doc,billingEmail:String(d.get('billingEmail')||'').trim()});
+      App.busy=false; App.subPlan=null; toast(r.instructions,'gold'); await Srv.loadSub(); window.scrollTo({top:0}); }
+    catch(e){ App.busy=false; formErr(e.message); } },
   async joinClub(f){ const d=new FormData(f); App.busy=true; App.formErr=''; render();
     try{ const r=await Api.post('/clubs/join',{code:String(d.get('code')||'').trim().toUpperCase(),role:String(d.get('role')||'desbravador')}); App.busy=false;
-      await Srv.loadMe();
+      await Srv.loadMe(); Srv.clearInvite();
       if(r.membership.status==='ativo'){ await Srv.open(r.club.id); toast('Bem-vindo ao '+r.club.name+'!','gold'); }
       else { render(); toast('Pedido enviado. A diretoria do '+r.club.name+' precisa aprovar sua entrada.'); } }
     catch(e){ App.busy=false; formErr(e.status===404?'Código não encontrado. Confira com a diretoria do clube.':e.status===409?'Você já faz parte deste clube.':e.message); } }
@@ -1873,10 +2091,23 @@ function formErr(msg){ App.formErr=msg; render(); }
 document.addEventListener('click',ev=>{ const el=ev.target.closest('[data-act]'); if(!el||!app.contains(el)&&!el.closest('.overlay')) return; const fn=Act[el.dataset.act]; if(fn){ ev.preventDefault(); fn(el,ev); } });
 document.addEventListener('submit',ev=>{ const f=ev.target; if(!f.dataset||!f.dataset.form) return; ev.preventDefault(); if(f.dataset.form!=='password') App.formErrFor=f.dataset.form; const fn=Forms[f.dataset.form]; if(fn) fn(f); });
 document.addEventListener('change',ev=>{ const el=ev.target; if(!el.dataset) return;
+  if(el.dataset.themeKey){ render(); return; }
+  if(el.dataset.themeHex){ const v=String(el.value||'').trim().replace(/^([^#])/,'#$1').toUpperCase();
+    if(/^#[0-9A-F]{6}$/.test(v)){ App.themeDraft=Object.assign({},App.themeDraft||Srv.info.branding.customTheme||{},{[el.dataset.themeHex]:v}); render(); }
+    else { toast('Use uma cor no formato #RRGGBB, por exemplo #1F5A3C.','bad'); render(); } return; }
+  if(el.dataset.chg==='logo'){ const file=el.files&&el.files[0]; if(!file) return;
+    if(['image/png','image/jpeg','image/webp'].indexOf(file.type)<0){ toast('Use uma imagem PNG, JPEG ou WebP.','bad'); return; }
+    if(file.size>1024*1024){ toast('A imagem tem mais de 1 MB. Diminua o tamanho e tente de novo.','bad'); return; }
+    toast('Enviando o logo…');
+    Api.upload('/clubs/'+Srv.club.id+'/logo',file).then(r=>{ Srv.info.branding.logoUrl=r.logoUrl; toast('Logo atualizado.','gold'); render(); },e=>toast(e.message,'bad'));
+    return; }
   if(el.dataset.chg==='target'){ App.target=el.value; App.cls=null; App.adv=false; render(); }
   if(el.dataset.chg==='kind'){ App.signKind=el.value; const f=el.form; const keep={}; if(f){ ['name','user','pw','birth','unit'].forEach(n=>{ if(f.elements[n]) keep[n]=f.elements[n].value; }); } render(); const nf=document.querySelector('form[data-form="signup"]'); if(nf){ Object.keys(keep).forEach(n=>{ if(nf.elements[n]) nf.elements[n].value=keep[n]; }); } }
 });
 document.addEventListener('input',ev=>{ const el=ev.target; if(!el.dataset) return;
+  if(el.dataset.themeKey){ const k=el.dataset.themeKey, v=String(el.value).toUpperCase();
+    App.themeDraft=Object.assign({},App.themeDraft||Srv.info.branding.customTheme||{},{[k]:v}); applyTheme(App.themeDraft);
+    const hx=document.querySelector('[data-theme-hex="'+k+'"]'); if(hx) hx.value=v; return; }
   if(el.dataset.draft){ const k=el.dataset.draft; Drafts[k]=el.value; el.style.height='auto'; el.style.height=Math.min(el.scrollHeight+2,520)+'px'; queueSave(k); return; }
   if(el.dataset.inp==='espQ'){ App.espQ=el.value; const pos=el.selectionStart; render(); const n=document.getElementById('esearch'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} } return; }
   if(el.dataset.inp==='search'){ App.search=el.value; const pos=el.selectionStart; render(); const n=document.getElementById('msearch'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} } } });

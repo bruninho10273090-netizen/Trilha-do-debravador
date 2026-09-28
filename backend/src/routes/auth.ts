@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { DUMMY_HASH, hashPassword, verifyPassword } from '../auth/password.js';
 import { createSession, deleteSession, deleteUserSessions } from '../auth/session.js';
 import { publicUser, requireUser } from '../context.js';
-import { clubs, memberships, users } from '../db/schema.js';
+import { clubLogos, clubs, memberships, users } from '../db/schema.js';
 import { badRequest, conflict, isUniqueViolation, unauthorized } from '../lib/errors.js';
 import { BirthDate, parse, Password, PersonName, ProfileFields, Username } from '../lib/validate.js';
 
@@ -58,16 +58,17 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.get('/auth/me', async (req) => {
     const user = requireUser(req);
-    const rows = await db.select({ m: memberships, c: clubs }).from(memberships)
+    const rows = await db.select({ m: memberships, c: clubs, logo: clubLogos.sha256 }).from(memberships)
       .innerJoin(clubs, eq(clubs.id, memberships.clubId))
+      .leftJoin(clubLogos, eq(clubLogos.clubId, clubs.id))
       .where(eq(memberships.userId, user.id))
       .orderBy(clubs.name);
     return {
       user: publicUser(user),
-      clubs: rows.map(({ m, c }) => ({
+      clubs: rows.map(({ m, c, logo }) => ({
         membershipId: m.id, role: m.role, status: m.status, unitId: m.unitId, classId: m.classId,
         isAdmin: c.ownerId === user.id,
-        club: { id: c.id, name: c.name, slug: c.slug },
+        club: { id: c.id, name: c.name, slug: c.slug, logoUrl: logo ? `/api/clubs/${c.id}/logo?v=${logo.slice(0, 12)}` : null },
       })),
     };
   });
