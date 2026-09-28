@@ -1700,9 +1700,24 @@ function inviteCard(){
      return '<div style="margin-top:14px;display:grid;gap:8px"><span class="eyebrow">Link de convite</span><span class="invite-link">'+esc(link)+'</span><div class="row"><button class="btn ghost" data-act="copyCode" data-v="'+esc(link)+'">Copiar link</button><a class="btn ghost" href="https://wa.me/?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener">Enviar pelo WhatsApp</a></div></div>'; })()+
    '</section>';
 }
+/* ---------- levar o clube para o servidor oficial ---------- */
+async function saveFile(name,text){
+  // dentro do claude.ai o download passa pela confirmação do próprio app; fora dele, link comum
+  try{ if(window.claude&&typeof window.claude.use==='function'){ const dl=await window.claude.use('downloads'); if(dl){ await dl.save({filename:name,data:text}); return true; } } }
+  catch(e){ if(e&&e.code==='declined') return false; if(e&&e.code&&e.code!=='unavailable'&&e.code!=='not_granted') throw e; }
+  const url=URL.createObjectURL(new Blob([text],{type:'application/json'})); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); return true;
+}
+function exportCard(){
+  if(Store.demo||Store.api()) return '';
+  const n=members().length;
+  return '<section class="card"><div class="card-h"><h3>Levar para o servidor oficial</h3></div>'+
+   '<p class="muted small" style="margin-bottom:12px">Gera um arquivo com tudo do clube: unidades, '+n+' membro'+(n===1?'':'s')+', cartões, respostas e especialidades. No servidor oficial, em Meus clubes, use "Trazer um clube do app antigo" para recriar o clube com esse arquivo. Os membros continuam entrando com a mesma senha.</p>'+
+   '<button class="btn" data-act="exportClub">'+ic('pack')+'Exportar dados do clube</button>'+
+   '<p class="hint" style="margin-top:8px">Guarde o arquivo com cuidado: ele tem os dados dos membros e as senhas protegidas (embaralhadas, não dá para ler).</p></section>';
+}
 function gestClube(){
   if(Store.api()) return inviteCard()+'<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="80" required></div><div><button class="btn" type="submit">Salvar</button></div></form></section>'+transferCard(me());
-  return '<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="60" required></div><div><button class="btn" type="submit">Salvar</button></div></form>'+
+  return exportCard()+'<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="60" required></div><div><button class="btn" type="submit">Salvar</button></div></form>'+
   '<div class="mode-note" style="margin-top:18px">'+ic(Store.mode==='cloud'?'cloud':'device')+'<span>'+(Store.mode==='cloud'?'Os dados ficam guardados junto com este app. Quem você convidar com acesso de edição vê e atualiza o mesmo clube.':Store.mode==='demo'?'Você está na demonstração: nada é salvo.':'Os dados estão salvos só neste navegador. Limpar os dados do navegador apaga o clube.')+'</span></div></section>';
 }
 
@@ -1813,6 +1828,25 @@ function renderAuthApi(){
   const inv=pub?'<div class="mode-note">'+ic('users')+'<span>Você foi convidado para o <b>'+esc(pub.club.name)+'</b>. '+(tab==='login'?'Entre com a sua conta':'Crie a sua conta')+' e depois confirme a entrada no clube.</span></div>':'';
   app.innerHTML='<div class="auth">'+authLeft(pub?pub.club.name:'Trilha do Desbravador',pub&&pub.branding.logoUrl)+'<section class="auth-r">'+right.replace('<div class="auth-card">','<div class="auth-card">'+inv)+'</section></div>';
 }
+function importCard(){
+  const r=App.impResult, d=App.imp;
+  if(r) return '<section class="card" style="border-color:color-mix(in srgb,var(--ok) 45%,var(--line))"><div class="card-h"><h3>'+esc(r.club.name)+' importado</h3><span class="pill ok">Pronto</span></div>'+
+    '<p>'+r.members+' membro'+(r.members===1?'':'s')+', '+r.requirements+' registro'+(r.requirements===1?'':'s')+' de cartão e '+r.specialties+' especialidade'+(r.specialties===1?'':'s')+'. O clube começou com 14 dias grátis e você é o administrador.</p>'+
+    (r.renamed.length?'<div style="margin-top:12px"><p class="eyebrow">Usuários que mudaram de nome</p><p class="muted small">Esses nomes já existiam no servidor. Avise cada pessoa do usuário novo; a senha é a mesma.</p><div class="list">'+r.renamed.map(x=>'<div class="li"><div class="grow"><strong>'+esc(x.name)+'</strong><span class="sub">@'+esc(x.from)+' agora é <b>@'+esc(x.to)+'</b></span></div></div>').join('')+'</div></div>':'')+
+    (r.withoutPassword.length?'<div style="margin-top:12px"><p class="eyebrow">Precisam de senha nova</p><p class="muted small">A senha dessas pessoas não pôde ser trazida. Crie uma nova em Gestão → Membros → Editar → Nova senha.</p><div class="list">'+r.withoutPassword.map(x=>'<div class="li"><div class="grow"><strong>'+esc(x.name)+'</strong><span class="sub">@'+esc(x.username)+'</span></div></div>').join('')+'</div></div>':'')+
+    '<div class="row" style="margin-top:14px"><button class="btn" data-act="openClub" data-id="'+esc(r.club.id)+'">Abrir o clube</button><button class="btn ghost" data-act="importClose">Fechar</button></div></section>';
+  if(d){ const list=Object.values(d.members||{}), kidsN=list.filter(m=>m.role==='desbravador').length;
+    const appr=list.reduce((a,m)=>a+Object.values(m.progress||{}).filter(e=>e&&e.s==='aprovado').length,0);
+    const opts=list.slice().sort((a,b)=>(a.role==='desbravador')-(b.role==='desbravador')||String(a.name).localeCompare(String(b.name),'pt-BR'));
+    return '<section class="card"><div class="card-h"><h3>Trazer '+esc(d.config.name)+'</h3></div>'+
+     '<p class="muted small" style="margin-bottom:12px">'+list.length+' membros ('+kidsN+' desbravadores), '+(d.config.units||[]).length+' unidades e '+appr+' requisitos aprovados. Será criado um clube novo, com você como administrador.</p>'+
+     '<div class="field" style="max-width:480px"><label for="imp-me">Quem é você nesse clube?</label><select id="imp-me" class="input"><option value="">Não estou na lista (entro como diretor)</option>'+opts.map(m=>'<option value="'+esc(m.id)+'">'+esc(m.name)+' · @'+esc(m.username)+' · '+esc(ROLES[m.role]||m.role)+'</option>').join('')+'</select><span class="hint">Escolha a sua conta antiga para juntar o seu histórico à conta que você está usando agora.</span></div>'+
+     (App.formErr&&App.formErrFor==='import'?'<p class="err" role="alert" style="margin-top:10px">'+esc(App.formErr)+'</p>':'')+
+     '<div class="row" style="margin-top:14px"><button class="btn" data-act="importDo"'+(App.busy?' disabled':'')+'>'+(App.busy?'Importando…':'Importar clube')+'</button><button class="btn ghost" data-act="importClose">Cancelar</button></div></section>'; }
+  return '<section class="card"><div class="card-h"><h3>Trazer um clube do app antigo</h3></div><p class="muted small" style="margin-bottom:12px">Usou o app antes, no artefato ou no modo local? Lá, em Gestão → Clube, toque em "Exportar dados do clube" e escolha o arquivo aqui. Membros, cartões e especialidades vêm junto, e todos continuam com a mesma senha.</p>'+
+   '<label class="btn ghost" for="imp-file">'+ic('plus')+'Escolher arquivo</label><input id="imp-file" type="file" accept=".json,application/json" data-chg="importFile" hidden>'+
+   (App.formErr&&App.formErrFor==='importFile'?'<p class="err" role="alert" style="margin-top:10px">'+esc(App.formErr)+'</p>':'')+'</section>';
+}
 function clubInitials(n){ return initials(String(n||'').replace(/^clube\s+(de\s+desbravadores\s+)?/i,'')); }
 function renderClubs(){
   const u=Srv.user, list=Srv.clubs, e=f=>App.formErr&&App.formErrFor===f?'<p class="err" role="alert">'+esc(App.formErr)+'</p>':'';
@@ -1833,6 +1867,7 @@ function renderClubs(){
      '<p class="hint">Você será o administrador do clube: cuida da assinatura, das cores e do logo. Os primeiros 14 dias são grátis.</p>'+
      e('createClub')+'<div><button class="btn" type="submit"'+(App.busy?' disabled':'')+'>'+ic('plus')+'Criar clube</button></div></form></section>'+
    '</div>'+
+   importCard()+
    (u.isPlatformAdmin?'':'<details class="info" style="margin-top:4px"><summary>Tenho um código de administração da plataforma</summary><form data-form="claimAdmin" class="row" style="margin-top:10px"><label for="ca-code" class="eyebrow" style="position:absolute;left:-9999px">Código de administração</label><input id="ca-code" name="code" type="password" class="input" required autocomplete="off" placeholder="Código definido na instalação do servidor" style="flex:1;min-width:220px"><button class="btn ghost" type="submit">Confirmar</button></form>'+e('claimAdmin')+'</details>');
   app.innerHTML='<header class="bar"><div class="bar-in"><div class="brand">'+BRAND+'<div style="min-width:0"><div class="brand-name">Trilha do Desbravador</div><span class="brand-sub">Seus clubes</span></div></div>'+
    '<button class="me-chip" data-act="logout" aria-label="Sair da conta"><span class="av sm" style="--avc:#B8820C;--avf:#1D1400" aria-hidden="true">'+esc(initials(u.name))+'</span><span class="me-txt"><strong>'+esc(firstName(u.name))+'</strong><small>Sair</small></span></button></div></header>'+
@@ -2008,7 +2043,17 @@ const Act={
   async okAcc(el){ if(!isAdmin(me())) return; const ok=await Store.patchMember(el.dataset.id,{status:'ativo'}); if(ok) toast('Conta aprovada.'); },
   async denyAcc(el){ if(!isAdmin(me())) return; const ok=await Store.delMember(el.dataset.id); if(ok) toast('Pedido recusado.'); },
   async delUnit(el){ if(!isAdmin(me())) return; const c=clone(cfg()); const n=kids().filter(k=>k.unit===el.dataset.id).length; c.units=(c.units||[]).filter(u=>u.id!==el.dataset.id); const ok=await Store.setConfig(c); if(ok) toast(n?'Unidade removida. '+n+' membro'+(n>1?'s ficaram':' ficou')+' sem unidade.':'Unidade removida.'); },
-  openClub(el){ Srv.open(el.dataset.id); },
+  openClub(el){ App.impResult=null; Srv.open(el.dataset.id); },
+  async exportClub(){ if(!isAdmin(me())) return;
+    const r=Store.real, data={format:'trilha-export',version:1,exportedAt:new Date().toISOString(),config:r.config,members:r.members,notes:r.notes,answers:r.answers};
+    const name='trilha-'+(normTxt((r.config&&r.config.name)||'clube').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'clube')+'-'+new Date().toISOString().slice(0,10)+'.json';
+    try{ const ok=await saveFile(name,JSON.stringify(data)); if(ok) toast('Arquivo exportado: '+name,'gold'); }
+    catch(e){ toast('Não foi possível gerar o arquivo'+(e&&e.message?': '+e.message:'.'),'bad'); } },
+  importClose(){ App.imp=null; App.impResult=null; App.formErr=''; render(); },
+  async importDo(){ const d=App.imp; if(!d) return; const sel=document.getElementById('imp-me'); const who=sel?sel.value:'';
+    App.busy=true; App.formErr=''; App.formErrFor='import'; render();
+    try{ const r=await Api.post('/clubs/import',{data:d,me:who||null}); App.busy=false; App.imp=null; App.impResult=r; await Srv.loadMe(); render(); window.scrollTo({top:0}); toast(r.club.name+' importado.','gold'); }
+    catch(e){ App.busy=false; formErr(e.status===413?'O arquivo é grande demais para importar de uma vez. Fale com o suporte.':e.message); } },
   platOpen(){ App.platform=true; App.platTab='resumo'; Srv.plat=null; render(); window.scrollTo({top:0}); },
   platExit(){ App.platform=false; render(); window.scrollTo({top:0}); },
   platTab(el){ App.platTab=el.dataset.v; App.formErr=''; render(); window.scrollTo({top:0}); },
@@ -2206,6 +2251,11 @@ document.addEventListener('change',ev=>{ const el=ev.target; if(!el.dataset) ret
   if(el.dataset.themeHex){ const v=String(el.value||'').trim().replace(/^([^#])/,'#$1').toUpperCase();
     if(/^#[0-9A-F]{6}$/.test(v)){ App.themeDraft=Object.assign({},App.themeDraft||Srv.info.branding.customTheme||{},{[el.dataset.themeHex]:v}); render(); }
     else { toast('Use uma cor no formato #RRGGBB, por exemplo #1F5A3C.','bad'); render(); } return; }
+  if(el.dataset.chg==='importFile'){ const file=el.files&&el.files[0]; if(!file) return; App.formErrFor='importFile';
+    file.text().then(t=>{ let d; try{ d=JSON.parse(t); }catch(e){ return formErr('Esse arquivo não é uma exportação do Trilha.'); }
+      if(!d||d.format!=='trilha-export'||!d.config||!d.members) return formErr('Esse arquivo não é uma exportação do Trilha. Gere de novo em Gestão → Clube → Exportar dados do clube.');
+      App.imp=d; App.impResult=null; App.formErr=''; render(); },()=>formErr('Não foi possível ler o arquivo.'));
+    return; }
   if(el.dataset.chg==='logo'){ const file=el.files&&el.files[0]; if(!file) return;
     if(['image/png','image/jpeg','image/webp'].indexOf(file.type)<0){ toast('Use uma imagem PNG, JPEG ou WebP.','bad'); return; }
     if(file.size>1024*1024){ toast('A imagem tem mais de 1 MB. Diminua o tamanho e tente de novo.','bad'); return; }

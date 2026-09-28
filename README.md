@@ -37,4 +37,6 @@ O administrador do clube tem ainda, na Gestão:
 
 **Painel da plataforma** (para quem vende as assinaturas): contas marcadas como administradoras da plataforma veem o botão "Painel da plataforma" em Meus clubes. Lá ficam o resumo (clubes, pagantes, em teste, vencidos, receita mensal estimada e recebido nos últimos 30 dias), as faturas para confirmar o pagamento com uma referência, a lista de clubes com o contato do administrador e cortesia de +7 ou +30 dias, os planos (preço, limite de membros, à venda ou não) e a busca de contas para desativar ou reativar o acesso. Para dar esse acesso a uma conta: `cd backend && npm run make-admin -- <usuario>`.
 
+**Do app antigo para o servidor:** no artefato ou no modo local, em Gestão → Clube, "Exportar dados do clube" gera um arquivo. No servidor, em Meus clubes, "Trazer um clube do app antigo" recria o clube com unidades, membros, cartões, respostas e especialidades. Os membros continuam entrando com a mesma senha (convertida para o formato novo no primeiro login); nomes de usuário que já existirem no servidor ganham um final diferente e aparecem na tela.
+
 O link de convite (`/?clube=<endereço>&codigo=<código>`) já abre a tela de entrada com o nome, o logo e as cores do clube e deixa o código preenchido.

@@ -138,6 +138,7 @@ Autenticação por cabeçalho `Authorization: Bearer <token>`. Todas as rotas co
 | Método | Rota | |
 |---|---|---|
 | POST | `/clubs` | cria o clube; quem cria vira administrador e diretor, com período de teste |
+| POST | `/clubs/import` | `{ data, me? }` recria um clube exportado do app antigo; responde com usuários renomeados e quem ficou sem senha |
 | POST | `/clubs/join` | `{ code, role?, unitId? }` entra pelo código de convite |
 | GET | `/clubs/:clubId` | clube, administrador, situação da assinatura, cores e logo, unidades e o seu vínculo |
 | PATCH | `/clubs/:clubId` | `{ name?, church?, region?, settings? }` |

@@ -14,6 +14,7 @@ import { billingRoutes } from './routes/billing.js';
 import { brandingRoutes, LOGO_TYPES } from './routes/branding.js';
 import { catalogRoutes } from './routes/catalog.js';
 import { clubRoutes } from './routes/clubs.js';
+import { importRoutes } from './routes/import.js';
 import { memberRoutes } from './routes/members.js';
 import { progressRoutes } from './routes/progress.js';
 
@@ -68,6 +69,7 @@ export async function buildApp(opts: { db: Db; config: Config; logger?: boolean 
     await api.register(authRoutes);
     await api.register(catalogRoutes);
     await api.register(clubRoutes);
+    await api.register(importRoutes);
     await api.register(memberRoutes);
     await api.register(progressRoutes);
     await api.register(brandingRoutes);

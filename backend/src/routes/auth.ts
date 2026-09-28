@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { DUMMY_HASH, hashPassword, verifyPassword } from '../auth/password.js';
+import { DUMMY_HASH, hashPassword, isLegacyHash, verifyPassword } from '../auth/password.js';
 import { createSession, deleteSession, deleteUserSessions } from '../auth/session.js';
 import { audit, publicUser, requireUser } from '../context.js';
 import { clubLogos, clubs, memberships, users } from '../db/schema.js';
@@ -48,6 +48,10 @@ export async function authRoutes(app: FastifyInstance) {
       .limit(1);
     const ok = await verifyPassword(body.password, user?.passwordHash ?? DUMMY_HASH);
     if (!user || !ok || user.disabledAt) throw unauthorized('Usuário ou senha incorretos.');
+    // senha trazida do app antigo: passa para o formato atual agora que sabemos a senha
+    if (isLegacyHash(user.passwordHash)) {
+      await db.update(users).set({ passwordHash: await hashPassword(body.password) }).where(eq(users.id, user.id));
+    }
     const s = await createSession(db, user.id, config.sessionDays, meta(req));
     return { token: s.token, expiresAt: s.expiresAt, user: publicUser(user) };
   });
