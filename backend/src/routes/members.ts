@@ -58,7 +58,7 @@ export async function memberRoutes(app: FastifyInstance) {
       members: rows.map(({ m, u }) => {
         const s = stats.get(m.id);
         const base = full ? memberView(m, u, ctx.club.ownerId)
-          : { id: m.id, name: u.name, username: u.username, role: m.role, status: m.status, unitId: m.unitId, classId: m.classId };
+          : { id: m.id, userId: u.id, name: u.name, username: u.username, role: m.role, status: m.status, unitId: m.unitId, classId: m.classId };
         return { ...base, stats: s ? { xp: s.xp, level: s.level, title: s.title, approved: s.approved, pending: s.pending, espDone: s.espDone } : null };
       }),
     };

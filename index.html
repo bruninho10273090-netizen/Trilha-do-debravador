@@ -838,23 +838,22 @@ const Store={
     else if(!quiet){ toast('Não deu para salvar agora. Tente de novo em instantes.','bad'); }
   },
   local(){ return this.demo||this.base==='local'; },
-  /* modo servidor: as gravações do cartão passam pela API (próxima etapa); até lá, não grava */
-  apiBlocked(){ if(this.base!=='api'||this.demo) return false; toast('Ainda não dá para salvar isso no modo servidor.','bad'); return true; },
-  setConfig(cfg){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ this.d.config=clone(cfg); this.persist(); changed(); return Promise.resolve(true);} return this.run('club/config',()=>this.db.doc('club/config').set(cfg)); },
-  setMember(id,data,quiet){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ this.d.members[id]=clone(data); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).set(data),quiet); },
-  patchMember(id,patch,quiet){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ const cur=this.d.members[id]; if(!cur) return Promise.resolve(false); this.d.members[id]=merge(clone(cur),patch); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).update(patch),quiet); },
-  delMember(id){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ delete this.d.members[id]; this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).delete()); },
+  /* modo servidor: a tela muda na hora e a gravação vai para a API (ver Srv.write) */
+  api(){ return this.base==='api'&&!this.demo; },
+  setConfig(cfg){ if(this.api()){ const prev=clone(this.real.config||{}); return Srv.write(()=>Srv.saveConfig(cfg,prev),()=>{ this.real.config=clone(cfg); }); } if(this.local()){ this.d.config=clone(cfg); this.persist(); changed(); return Promise.resolve(true);} return this.run('club/config',()=>this.db.doc('club/config').set(cfg)); },
+  setMember(id,data,quiet){ if(this.api()){ toast('Não foi possível salvar.','bad'); return Promise.resolve(false); } if(this.local()){ this.d.members[id]=clone(data); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).set(data),quiet); },
+  patchMember(id,patch,quiet){ if(this.api()){ const cur=this.real.members[id]; if(!cur) return Promise.resolve(false); const prev=clone(cur); return Srv.write(()=>Srv.applyPatch(id,patch,prev),()=>{ this.real.members[id]=merge(clone(cur),patch); },{quiet:quiet}); } if(this.local()){ const cur=this.d.members[id]; if(!cur) return Promise.resolve(false); this.d.members[id]=merge(clone(cur),patch); this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).update(patch),quiet); },
+  delMember(id){ if(this.api()) return Srv.write(()=>Api.del('/clubs/'+Srv.club.id+'/members/'+id),()=>{ delete this.real.members[id]; }); if(this.local()){ delete this.d.members[id]; this.persist(); changed(); return Promise.resolve(true);} return this.run('m/'+id,()=>this.db.doc('members/'+id).delete()); },
   /* textos: notes/{membro} guarda as respostas dos requisitos de classe; answers/{membro~especialidade} as do caderno */
   upsert(col,id,patch,base,quiet){
-    if(this.apiBlocked()) return Promise.resolve(false);
     const path=col+'/'+id;
     if(this.local()){ const bag=this.d[col]; bag[id]=merge(clone(bag[id]||base),patch); this.persist(); changed(); return Promise.resolve(true); }
     return this.run(path,()=>{ if(this.d[col][id]||this.known[path]) return this.db.doc(path).update(patch); return this.db.doc(path).set(merge(clone(base),patch)).then(()=>{ this.known[path]=1; }); },quiet);
   },
-  saveNote(mid,key,txt){ return this.upsert('notes',mid,{t:{[key]:txt},at:Date.now()},{m:mid,t:{}}); },
-  saveAnswer(mid,eid,i,txt){ return this.upsert('answers',mid+'~'+eid,{a:{['r'+i]:txt},at:Date.now()},{m:mid,e:eid,a:{},d:[]}); },
-  setDone(mid,eid,d){ return this.upsert('answers',mid+'~'+eid,{d:d,at:Date.now()},{m:mid,e:eid,a:{},d:[]}); },
-  delDoc(col,id){ if(this.apiBlocked()) return Promise.resolve(false); if(this.local()){ delete this.d[col][id]; this.persist(); changed(); return Promise.resolve(true);} return this.run(col+'/'+id,()=>this.db.doc(col+'/'+id).delete(),true); }
+  saveNote(mid,key,txt){ if(this.api()) return Srv.write(()=>Api.patch(Srv.memberPath(mid)+'/requirements/'+encodeURIComponent(key),{note:txt}),()=>{ const n=this.real.notes[mid]=this.real.notes[mid]||{m:mid,t:{}}; n.t[key]=txt; },{quiet:true,noReload:true}); return this.upsert('notes',mid,{t:{[key]:txt},at:Date.now()},{m:mid,t:{}}); },
+  saveAnswer(mid,eid,i,txt){ if(this.api()) return Srv.write(()=>Api.patch(Srv.memberPath(mid)+'/specialties/'+encodeURIComponent(eid),{answers:{['r'+i]:txt}}),()=>{ const a=this.real.answers[mid+'~'+eid]=this.real.answers[mid+'~'+eid]||{m:mid,e:eid,a:{},d:[]}; a.a['r'+i]=txt; },{quiet:true,noReload:true}); return this.upsert('answers',mid+'~'+eid,{a:{['r'+i]:txt},at:Date.now()},{m:mid,e:eid,a:{},d:[]}); },
+  setDone(mid,eid,d){ if(this.api()) return Srv.write(()=>Api.patch(Srv.memberPath(mid)+'/specialties/'+encodeURIComponent(eid),{done:d}),()=>{ const a=this.real.answers[mid+'~'+eid]=this.real.answers[mid+'~'+eid]||{m:mid,e:eid,a:{},d:[]}; a.d=d.slice(); },{noReload:true}); return this.upsert('answers',mid+'~'+eid,{d:d,at:Date.now()},{m:mid,e:eid,a:{},d:[]}); },
+  delDoc(col,id){ if(this.api()) return Promise.resolve(true); if(this.local()){ delete this.d[col][id]; this.persist(); changed(); return Promise.resolve(true);} return this.run(col+'/'+id,()=>this.db.doc(col+'/'+id).delete(),true); }
 };
 const noteOf=(mid,key)=>{ const n=Store.d.notes[mid]; return (n&&n.t&&n.t[key])||''; };
 const ansDoc=(mid,eid)=>Store.d.answers[mid+'~'+eid]||null;
@@ -942,10 +941,67 @@ const Srv={
   },
   /* recarrega em segundo plano (volta à aba, ou a cada minuto) sem atrapalhar quem está digitando */
   async refresh(){
-    if(Store.base!=='api'||Store.demo||!this.club||this.loading||Date.now()-this.lastLoad<15000) return;
+    if(Store.base!=='api'||Store.demo||!this.club||this.loading||this.pending||Date.now()-this.lastLoad<15000) return;
     try{ await this.load(this.club.id); changed(); }catch(e){ if(e.status===404){ toast('Você não tem mais acesso a este clube.','bad'); this.forget(); await this.loadMe().catch(()=>{}); render(); } }
   }
 };
+const DEFAULT_RET='Precisa de ajustes. Converse com a liderança.';
+Object.assign(Srv,{
+  q:Promise.resolve(), pending:0, rt:0,
+  memberPath(id){ return '/clubs/'+this.club.id+'/members/'+encodeURIComponent(id); },
+  /* aplica na tela na hora, grava em fila (na ordem) e recarrega do servidor; se o servidor recusar, desfaz */
+  write(fn,optimistic,opts){
+    opts=opts||{};
+    if(optimistic){ optimistic(); changed(); }
+    this.pending++;
+    const p=this.q.then(fn,fn); this.q=p.catch(()=>{});
+    return p.then(()=>{ this.pending--; if(!opts.noReload) this.reloadSoon(); return true; },
+      e=>{ this.pending--; if(!(opts.quiet&&e.status===0)) toast(e.message,'bad'); this.reloadSoon(0); return false; });
+  },
+  reloadSoon(ms){
+    clearTimeout(this.rt);
+    this.rt=setTimeout(async()=>{ if(!this.club) return; if(this.pending){ this.reloadSoon(); return; } try{ await this.load(this.club.id); changed(); }catch(e){} },ms==null?600:ms);
+  },
+  async saveConfig(c,prev){
+    const q='/clubs/'+this.club.id;
+    if(c.name&&c.name!==prev.name) await Api.patch(q,{name:c.name});
+    const pu=prev.units||[], nu=c.units||[];
+    for(const u of pu) if(!nu.some(x=>x.id===u.id)) await Api.del(q+'/units/'+u.id);
+    for(const u of nu){ const o=pu.find(x=>x.id===u.id); if(!o) await Api.post(q+'/units',{name:u.name,color:u.color||null}); else if(o.name!==u.name) await Api.patch(q+'/units/'+u.id,{name:u.name}); }
+  },
+  /* traduz as mudanças que as telas fazem no membro para as rotas da API */
+  async applyPatch(id,patch,prev){
+    const base=this.memberPath(id);
+    if(patch.status==='ativo'&&prev.status==='pendente') await Api.post(base+'/approve');
+    let espApproved=false;
+    if(patch.esp) for(const eid of Object.keys(patch.esp)){
+      const v=patch.esp[eid], cur=(prev.esp||{})[eid]||null, u=base+'/specialties/'+encodeURIComponent(eid);
+      if(v===null){ if(cur&&cur.s) await Api.del(u); continue; }
+      if(v.s==='enviado') await Api.post(u+'/submit');
+      else if(v.s==='aprovado'){ await Api.post(u+'/approve'); espApproved=true; }
+      else if(v.s==='devolvido') await Api.post(u+'/return',{comment:v.cm||DEFAULT_RET});
+      else if(v.s==='andamento'){
+        if(!cur||!cur.s) await Api.patch(u,v.name?{customName:v.name,customArea:v.area||'AR'}:{});
+        else if(cur.s==='enviado') await Api.post(u+'/unsubmit');
+        else if(cur.s==='aprovado') await Api.post(u+'/unapprove');
+      }
+    }
+    // ao aprovar uma especialidade, o servidor já cumpre os requisitos ligados a ela
+    if(patch.progress&&!espApproved){
+      const approve=[];
+      for(const key of Object.keys(patch.progress)){
+        const e=patch.progress[key]||{}, cur=(prev.progress||{})[key]||{}, u=base+'/requirements/'+encodeURIComponent(key);
+        if(!('s' in e)){ const b={}; if('choice' in e) b.choice=e.choice||[]; if('subs' in e) b.subs=e.subs||[]; if(Object.keys(b).length) await Api.patch(u,b); continue; }
+        if(e.s==='aprovado') approve.push(key);
+        else if(e.s==='enviado') await Api.post(u+'/submit');
+        else if(e.s==='devolvido') await Api.post(u+'/return',{comment:e.cm||DEFAULT_RET});
+        else if(e.s===null){ if(cur.s==='enviado') await Api.post(u+'/unsubmit'); else if(cur.s==='aprovado') await Api.post(u+'/unapprove'); }
+      }
+      if(approve.length===1) await Api.post(base+'/requirements/'+encodeURIComponent(approve[0])+'/approve');
+      else for(let i=0;i<approve.length;i+=100) await Api.post(base+'/requirements/approve',{keys:approve.slice(i,i+100)});
+    }
+  }
+});
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) Srv.refresh(); });
 setInterval(()=>{ if(!document.hidden) Srv.refresh(); },60000);
 
@@ -1032,7 +1088,6 @@ function banner(){
   if(Store.demo){ const who=me(); const kid=who&&who.role==='desbravador';
     return '<div class="banner"><div class="banner-in"><span>Demonstração com dados de exemplo. Nada aqui é salvo.</span><button class="btn gold" data-act="demoAs" data-id="'+(kid?'ana.diretora':'lucas')+'">Ver como '+(kid?'diretora':'desbravador')+'</button><button class="btn ghost" data-act="demoExit">Sair da demonstração</button></div></div>'; }
   if(Store.readOnly) return '<div class="banner bad"><div class="banner-in">Você está só visualizando: sua conta não tem permissão de edição neste app. Peça ao dono acesso de edição para salvar.</div></div>';
-  if(Store.base==='api') return '<div class="banner"><div class="banner-in">'+ic('cloud')+'<span>Em construção: por enquanto o cartão, as especialidades e a gestão ainda não salvam mudanças.</span></div></div>';
   if(Store.base==='local') return '<div class="banner"><div class="banner-in">'+ic('device')+'<span>Modo local: os dados ficam salvos só neste navegador.</span></div></div>';
   return '';
 }
@@ -1407,7 +1462,10 @@ function memberEditor(x,m){
    '<div class="field"><label for="em-unit">Unidade</label><select id="em-unit" name="unit" class="input">'+unitOptions(x.unit,true)+'</select></div>'+
    '<div class="field"><label for="em-birth">Nascimento</label><input id="em-birth" name="birth" type="date" class="input" value="'+esc(x.birth||'')+'"></div>'+
    (x.role==='desbravador'?'<div class="field"><label for="em-cls">Classe atual</label><select id="em-cls" name="classId" class="input">'+CLASSES.map(c=>'<option value="'+c.id+'"'+(c.id===memberClass(x)?' selected':'')+'>'+c.name+' ('+c.age+' anos)</option>').join('')+'</select></div>':'')+
-   '<div class="field"><label for="em-pw">Nova senha (opcional)</label><input id="em-pw" name="pw" type="text" class="input" minlength="6" placeholder="Deixe vazio para manter" autocomplete="off"></div>'+
+   (Store.api()?'<div class="field"><label for="em-phone">Celular</label><input id="em-phone" name="phone" type="tel" class="input" value="'+esc(x.phone||'')+'"></div>'+
+     '<div class="field"><label for="em-gname">Responsável</label><input id="em-gname" name="guardianName" class="input" value="'+esc(x.guardianName||'')+'"></div>'+
+     '<div class="field"><label for="em-gphone">Celular do responsável</label><input id="em-gphone" name="guardianPhone" type="tel" class="input" value="'+esc(x.guardianPhone||'')+'"></div>':'')+
+   '<div class="field"><label for="em-pw">Nova senha (opcional)</label><input id="em-pw" name="pw" type="text" class="input" minlength="'+(Store.api()?8:6)+'" placeholder="Deixe vazio para manter" autocomplete="off"></div>'+
    '</div><div class="row between"><div class="row"><button class="btn sm" type="submit">Salvar</button><button class="btn sm ghost" type="button" data-act="editM" data-id="'+esc(x.id)+'">Cancelar</button></div>'+
    (self?'':(App.confirmDel===x.id?'<div class="row"><span class="small err">Remover '+esc(firstName(x.name))+' e todo o progresso?</span><button class="btn sm danger" type="button" data-act="delM" data-id="'+esc(x.id)+'">Remover de vez</button><button class="btn sm ghost" type="button" data-act="askDel" data-id="">Não</button></div>':'<button class="btn sm ghost" type="button" data-act="askDel" data-id="'+esc(x.id)+'">'+ic('x')+'Remover</button>'))+
    '</div>'+(App.formErr?'<p class="err">'+esc(App.formErr)+'</p>':'')+'</form>';
@@ -1417,10 +1475,12 @@ function gestNovo(){
   '<form data-form="newMember" style="display:grid;gap:14px"><div class="grid2">'+
    '<div class="field"><label for="nm-name">Nome completo</label><input id="nm-name" name="name" class="input" required maxlength="60" autocomplete="off"></div>'+
    '<div class="field"><label for="nm-user">Usuário</label><input id="nm-user" name="user" class="input" required pattern="[A-Za-z0-9._\\-]{3,24}" autocomplete="off" autocapitalize="none"><span class="hint">3 a 24 letras, números, ponto ou traço</span></div>'+
-   '<div class="field"><label for="nm-pw">Senha inicial</label><input id="nm-pw" name="pw" type="text" class="input" required minlength="6" autocomplete="off"></div>'+
+   '<div class="field"><label for="nm-pw">Senha inicial</label><input id="nm-pw" name="pw" type="text" class="input" required minlength="'+(Store.api()?8:6)+'" autocomplete="off"></div>'+
    '<div class="field"><label for="nm-birth">Nascimento</label><input id="nm-birth" name="birth" type="date" class="input"><span class="hint">Define a classe pela idade</span></div>'+
    '<div class="field"><label for="nm-unit">Unidade</label><select id="nm-unit" name="unit" class="input">'+unitOptions(null,true)+'</select></div>'+
    '<div class="field"><label for="nm-role">Função</label><select id="nm-role" name="role" class="input">'+Object.keys(ROLES).reverse().map(r=>'<option value="'+r+'">'+ROLES[r]+'</option>').join('')+'</select></div>'+
+   (Store.api()?'<div class="field"><label for="nm-gname">Responsável <span class="muted">(opcional)</span></label><input id="nm-gname" name="guardianName" class="input" maxlength="80"></div>'+
+     '<div class="field"><label for="nm-gphone">Celular do responsável <span class="muted">(opcional)</span></label><input id="nm-gphone" name="guardianPhone" type="tel" class="input"></div>':'')+
   '</div>'+(App.formErr?'<p class="err">'+esc(App.formErr)+'</p>':'')+'<div><button class="btn" type="submit">'+ic('plus')+'Cadastrar</button></div></form></section>';
 }
 function gestUnidades(){
@@ -1433,7 +1493,16 @@ function gestPendentes(){
   const list=members().filter(x=>x.status==='pendente');
   return '<section class="card"><div class="card-h"><h3>Contas da liderança aguardando aprovação</h3></div>'+(list.length?'<div class="list">'+list.map(x=>'<div class="li" style="flex-wrap:wrap">'+avHtml(x)+'<div class="grow"><strong>'+esc(x.name)+'</strong><span class="sub">@'+esc(x.username)+' · pediu acesso como '+esc((ROLES[x.role]||'').toLowerCase())+' · '+rel(x.createdAt)+'</span></div><div class="row"><button class="btn sm ghost" data-act="denyAcc" data-id="'+esc(x.id)+'">Recusar</button><button class="btn sm" data-act="okAcc" data-id="'+esc(x.id)+'">'+ic('check')+'Aprovar</button></div></div>').join('')+'</div>':'<div class="empty"><strong>Nenhuma conta pendente.</strong>Quando alguém se cadastrar como liderança, o pedido aparece aqui.</div>')+'</section>';
 }
+function inviteCard(){
+  const code=Srv.info&&Srv.info.club&&Srv.info.club.joinCode; if(!code) return '';
+  return '<section class="card"><div class="card-h"><h3>Código de convite</h3></div>'+
+   '<p class="muted small" style="margin-bottom:12px">Passe este código para quem vai entrar no clube. A pessoa cria a conta e digita o código em "Entrar em um clube". Desbravadores entram na hora; a liderança espera a sua aprovação em Contas pendentes.</p>'+
+   '<div class="row"><span class="input num" style="width:auto;font-family:var(--f-display);font-size:24px;letter-spacing:.14em;min-height:auto;padding:8px 16px" aria-label="Código de convite">'+esc(code)+'</span>'+
+   '<button class="btn ghost" data-act="copyCode" data-v="'+esc(code)+'">Copiar</button><button class="btn ghost" data-act="rotateCode">Gerar outro código</button></div>'+
+   '<p class="hint" style="margin-top:8px">Gerar outro código invalida o anterior; quem já entrou continua no clube.</p></section>';
+}
 function gestClube(){
+  if(Store.api()) return inviteCard()+'<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="80" required></div><div><button class="btn" type="submit">Salvar</button></div></form></section>';
   return '<section class="card"><div class="card-h"><h3>Dados do clube</h3></div><form data-form="clubName" style="display:grid;gap:14px"><div class="field"><label for="cl-name">Nome do clube</label><input id="cl-name" name="name" class="input" value="'+esc(cfg().name)+'" maxlength="60" required></div><div><button class="btn" type="submit">Salvar</button></div></form>'+
   '<div class="mode-note" style="margin-top:18px">'+ic(Store.mode==='cloud'?'cloud':'device')+'<span>'+(Store.mode==='cloud'?'Os dados ficam guardados junto com este app. Quem você convidar com acesso de edição vê e atualiza o mesmo clube.':Store.mode==='demo'?'Você está na demonstração: nada é salvo.':'Os dados estão salvos só neste navegador. Limpar os dados do navegador apaga o clube.')+'</span></div></section>';
 }
@@ -1660,6 +1729,8 @@ const Act={
   async denyAcc(el){ if(!isAdmin(me())) return; const ok=await Store.delMember(el.dataset.id); if(ok) toast('Pedido recusado.'); },
   async delUnit(el){ if(!isAdmin(me())) return; const c=clone(cfg()); const n=kids().filter(k=>k.unit===el.dataset.id).length; c.units=(c.units||[]).filter(u=>u.id!==el.dataset.id); const ok=await Store.setConfig(c); if(ok) toast(n?'Unidade removida. '+n+' membro'+(n>1?'s ficaram':' ficou')+' sem unidade.':'Unidade removida.'); },
   openClub(el){ Srv.open(el.dataset.id); },
+  async copyCode(el){ try{ await navigator.clipboard.writeText(el.dataset.v); toast('Código copiado.'); }catch(e){ toast('Código: '+el.dataset.v); } },
+  async rotateCode(){ if(!isAdmin(me())) return; try{ const r=await Api.post('/clubs/'+Srv.club.id+'/join-code'); Srv.info.club.joinCode=r.joinCode; toast('Código novo gerado.'); render(); }catch(e){ toast(e.message,'bad'); } },
   async myClubs(){ Srv.forget(); App.formErr=''; render(); await Srv.loadMe().catch(()=>{}); render(); window.scrollTo({top:0}); },
   logout(){ if(Store.demo){ Act.demoExit(); return; }
     if(Store.base==='api'){ Api.post('/auth/logout').catch(()=>{}); Api.setToken(null); Srv.forget(); Srv.reset(); App.view='home'; App.authTab='login'; App.authErr=''; render(); return; }
@@ -1674,7 +1745,7 @@ const Forms={
     const val={s:'devolvido',at:Date.now(),by:m.id,cm:cm};
     const ok=await Store.patchMember(id,kind==='esp'?{esp:{[key]:val}}:{progress:{[key]:val}}); if(ok){ App.ret=null; toast('Devolvido'+(cm?' com seu comentário':'')+'.'); render(); } },
   async espCustom(f){ const m=me(); if(Store.readOnly||!m) return; const d=new FormData(f); const name=String(d.get('name')||'').trim().slice(0,60); if(!name) return; const area=String(d.get('area')||'AR');
-    const eid='x-'+normTxt(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30)+'-'+rid();
+    const eid=(Store.api()?'custom-':'x-')+normTxt(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30)+'-'+rid();
     const ok=await Store.patchMember(m.id,{esp:{[eid]:{s:'andamento',at:Date.now(),name:name,area:area}}}); if(ok){ App.espCustom=false; App.espOpen=eid; toast(name+' entrou no seu caderno.'); render(); window.scrollTo({top:0}); } },
   async setup(f){ const d=new FormData(f); const user=normUser(d.get('user')), pw=String(d.get('pw')||''), name=String(d.get('name')||'').trim(), club=String(d.get('club')||'').trim();
     if(!validUser(user)) return authErr('Usuário deve ter de 3 a 24 caracteres: letras, números, ponto ou traço.'); if(pw.length<6) return authErr('A senha precisa de pelo menos 6 caracteres.');
@@ -1698,12 +1769,38 @@ const Forms={
     const m=await makeMember({user:user,pw:pw,name:name,role:role,unit:String(d.get('unit')||'')||null,birth:birth||null,status:role==='desbravador'?'ativo':'pendente'}); App.fresh=m;
     const ok=await Store.setMember(m.id,m); App.busy=false; if(!ok) return authErr('Não foi possível criar a conta.');
     setSession(m.id); render(); if(role==='desbravador'){ burst(); toast('Bem-vindo à trilha! Sua classe: '+CLS[m.classId].name+'.','gold'); } },
-  async newMember(f){ const m=me(); if(!isAdmin(m)) return; const d=new FormData(f); const user=normUser(d.get('user')), pw=String(d.get('pw')||''), name=String(d.get('name')||'').trim();
+  async newMember(f){ const m=me(); if(!isAdmin(m)) return; const d=new FormData(f);
+    if(Store.api()){
+      const opt=k=>String(d.get(k)||'').trim()||undefined;
+      const body={username:normUser(d.get('user')),password:String(d.get('pw')||''),name:String(d.get('name')||'').trim(),role:ROLES[d.get('role')]?String(d.get('role')):'desbravador',unitId:opt('unit')||null,birth:opt('birth'),phone:opt('phone'),guardianName:opt('guardianName'),guardianPhone:opt('guardianPhone')};
+      if(!validUser(body.username)) return formErr('Usuário deve ter de 3 a 24 caracteres: letras, números, ponto ou traço.');
+      if(body.password.length<8) return formErr('A senha inicial precisa de pelo menos 8 caracteres.');
+      try{ await Api.post('/clubs/'+Srv.club.id+'/members',body); App.formErr=''; f.reset(); toast(body.name+' cadastrado. Usuário: '+body.username); await Srv.load(Srv.club.id); render(); }
+      catch(e){ formErr(e.message); }
+      return;
+    } const user=normUser(d.get('user')), pw=String(d.get('pw')||''), name=String(d.get('name')||'').trim();
     if(!validUser(user)) return formErr('Usuário deve ter de 3 a 24 caracteres: letras, números, ponto ou traço.'); if(pw.length<6) return formErr('A senha precisa de pelo menos 6 caracteres.'); if(Store.d.members[user]) return formErr('Esse usuário já existe.');
     const role=ROLES[d.get('role')]?String(d.get('role')):'desbravador';
     const nm=await makeMember({user:user,pw:pw,name:name,role:role,unit:String(d.get('unit')||'')||null,birth:String(d.get('birth')||'')||null,status:'ativo'});
     const ok=await Store.setMember(nm.id,nm); if(ok){ App.formErr=''; toast(name+' cadastrado. Usuário: '+user); f.reset(); render(); } },
   async editMember(f){ const m=me(); if(!isAdmin(m)) return; const id=f.dataset.id; const x=Store.d.members[id]; if(!x) return; const d=new FormData(f);
+    if(Store.api()){
+      const opt=k=>String(d.get(k)||'').trim()||null, base=Srv.memberPath(id);
+      const role=(id!==m.id&&ROLES[d.get('role')])?String(d.get('role')):x.role;
+      const mb={}; if(role!==x.role) mb.role=role; if(opt('unit')!==(x.unit||null)) mb.unitId=opt('unit');
+      if(role==='desbravador'&&d.get('classId')&&CLS[d.get('classId')]&&d.get('classId')!==x.classId) mb.classId=String(d.get('classId'));
+      const pb={}; const name=opt('name')||x.name; if(name!==x.name) pb.name=name; if(opt('birth')!==(x.birth||null)) pb.birth=opt('birth');
+      ['phone','guardianName','guardianPhone'].forEach(k=>{ if(d.has(k)&&opt(k)!==(x[k]||null)) pb[k]=opt(k); });
+      const pw=String(d.get('pw')||'');
+      if(pw&&pw.length<8) return formErr('A nova senha precisa de pelo menos 8 caracteres.');
+      try{
+        if(Object.keys(mb).length) await Api.patch(base,mb);
+        if(Object.keys(pb).length) await Api.patch(base+'/profile',pb);
+        if(pw) await Api.post(base+'/password',{password:pw});
+        App.edit=null; App.formErr=''; toast(pw?'Dados e senha atualizados.':'Dados atualizados.'); await Srv.load(Srv.club.id); render();
+      }catch(e){ formErr(e.message); await Srv.load(Srv.club.id).catch(()=>{}); render(); }
+      return;
+    }
     const patch={name:String(d.get('name')||'').trim()||x.name,unit:String(d.get('unit')||'')||null,birth:String(d.get('birth')||'')||null};
     if(id!==m.id&&ROLES[d.get('role')]) patch.role=String(d.get('role'));
     if(d.get('classId')&&CLS[d.get('classId')]) patch.classId=String(d.get('classId'));
