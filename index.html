@@ -2193,7 +2193,7 @@ const Game={
   /* ---------- telas ---------- */
   draw(){
     const G=this.G, th=this.th(), it=G.it, mute=LS.get('trilha-dbv.jogos.mudo');
-    const top='<div class="gm-top"><span class="gm-logo" aria-hidden="true">'+th.icon+'</span><div class="gm-tt"><b>'+esc(th.name)+'</b><small>'+(it.esp?'Especialidade · '+esc((AREAS[it.esp.a]||AREAS.AR).n)+(it.esp.c?' · '+esc(it.esp.c):''):esc(CLS[it.cls].name)+(it.adv?' avançada':'')+' · requisito '+esc(itemLabel(it)))+'</small></div>'+
+    const top='<div class="gm-top"><span class="gm-logo" aria-hidden="true">'+th.icon+'</span><div class="gm-tt"><b>'+esc(th.name)+'</b><small>'+(it.esp?'Especialidade · '+esc(it.esp.n):esc(CLS[it.cls].name)+(it.adv?' avançada':'')+' · requisito '+esc(itemLabel(it)))+'</small></div>'+
       '<button class="gm-x" data-g="mute" aria-label="'+(mute?'Ligar som':'Desligar som')+'">'+(mute?'🔇':'🔊')+'</button><button class="gm-x" data-g="close" aria-label="Fechar o jogo">✕</button></div>';
     let body='';
     if(G.phase==='intro') body=this.introHtml();
