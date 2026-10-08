@@ -338,7 +338,7 @@ button.tile{cursor:pointer;font:inherit;color:inherit}
 .toast.gold{background:var(--gold);color:#1D1400}
 .toast.bad{background:var(--bad);color:#fff}
 .toast.out{opacity:0;transform:translateY(6px)}
-.fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:80}
+.fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:95}
 /* escrita */
 .ta{min-height:64px;resize:vertical;line-height:1.5;padding:10px 12px;display:block;margin-top:8px;font-size:14.5px}
 .ta-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:10px}
@@ -426,6 +426,90 @@ button.tile{cursor:pointer}
 .plan .price small{font-family:var(--f-body);font-size:13px;font-weight:600;color:var(--muted)}
 .subhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .invite-link{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}
+/* minijogos: cada faixa de idade tem um visual próprio, de propósito fora do tema do clube */
+.gm-play .gm-stars,.req-act .gm-stars{color:var(--gold);font-size:12px;letter-spacing:-1px;margin-left:2px}
+.gm{position:fixed;inset:0;z-index:90;overflow:auto;background:var(--g-bg);color:var(--g-ink);font:500 16px/1.4 var(--g-font);padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));-webkit-tap-highlight-color:transparent;color-scheme:light}
+.gm-in{max-width:720px;margin:0 auto;display:grid;gap:14px}
+.gm-top{display:flex;align-items:center;gap:10px}
+.gm-logo{font-size:30px;line-height:1}
+.gm-tt{flex:1;min-width:0}
+.gm-tt b{display:block;font-family:var(--g-head);font-size:21px;line-height:1.15;letter-spacing:var(--g-ls)}
+.gm-tt small{display:block;font-size:13px;opacity:.85}
+.gm-x{flex:none;width:44px;height:44px;border-radius:var(--g-r);border:var(--g-bd);background:var(--g-panel);color:var(--g-pink);font-size:17px;cursor:pointer;box-shadow:var(--g-sh)}
+.gm-card{background:var(--g-panel);color:var(--g-pink);border:var(--g-bd);border-radius:var(--g-r);box-shadow:var(--g-sh);padding:16px;display:grid;gap:12px;min-width:0}
+.gm-kick{font-family:var(--g-head);font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.gm-h{font-family:var(--g-head);font-size:22px;line-height:1.2;letter-spacing:var(--g-ls);text-wrap:balance}
+.gm-req{font-size:16px}
+.gm-note{font-size:13.5px;opacity:.85}
+.gm-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gm-btn{font:inherit;font-family:var(--g-head);font-size:18px;letter-spacing:var(--g-ls);border:var(--g-bd);border-radius:var(--g-r);background:var(--g-acc);color:var(--g-acc-ink);padding:12px 22px;min-height:52px;cursor:pointer;box-shadow:var(--g-sh)}
+.gm-btn.alt{background:var(--g-chip);color:var(--g-chip-ink)}
+.gm-btn:active,.gm-chip:active,.gm-key:active{transform:translateY(2px)}
+.gm-opt{font:inherit;font-size:14px;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);padding:8px 12px;min-height:42px;cursor:pointer;text-align:left}
+.gm-opt.on{background:var(--g-acc);color:var(--g-acc-ink)}
+.gm-hud{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;justify-content:space-between;font-family:var(--g-head);font-size:15px;letter-spacing:var(--g-ls)}
+.gm-lives{font-size:19px;letter-spacing:2px}
+.gm-time{flex-basis:100%;height:10px;border-radius:999px;background:var(--g-line);overflow:hidden}
+.gm-time i{display:block;height:100%;background:var(--g-acc);transition:width .25s linear}
+.gm-board{display:grid;gap:12px;min-width:0}
+.gm-slots{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.gm-slot{display:flex;gap:10px;align-items:center;min-height:46px;border:2px dashed var(--g-line);border-radius:var(--g-r);padding:6px 12px;font-size:15px}
+.gm-slot.ok{border-style:solid;border-color:transparent;background:var(--g-ok);color:var(--g-ok-ink)}
+.gm-slot b{flex:none;font-family:var(--g-head);font-size:12.5px;opacity:.8;min-width:30px}
+.gm-chips,.gm-opts{display:flex;gap:8px;flex-wrap:wrap}
+.gm-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.gm-chip{font:inherit;font-size:15px;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);padding:11px 14px;min-height:46px;cursor:pointer;box-shadow:var(--g-sh);max-width:100%;text-align:left}
+.gm-chip.right{background:var(--g-ok);color:var(--g-ok-ink)}
+.gm-chip.wrong{opacity:.45}
+.bad{animation:gmShake .35s}
+@keyframes gmShake{25%{translate:-7px 0}75%{translate:7px 0}}
+.gm-field{position:relative;height:min(56vh,420px);overflow:hidden;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-field);touch-action:manipulation}
+.gm-tok{position:absolute;top:0;max-width:44%;font:inherit;font-size:14px;line-height:1.2;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);padding:10px 12px;cursor:pointer;box-shadow:var(--g-sh);will-change:transform;text-align:center;transform:translateY(-50px)}
+.gm-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.gm-card-m{min-height:96px;font:inherit;font-size:13.5px;line-height:1.2;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-back);color:var(--g-chip-ink);cursor:pointer;padding:8px;display:grid;place-items:center;text-align:center;box-shadow:var(--g-sh);overflow-wrap:anywhere}
+.gm-card-m .e{font-size:28px;line-height:1.1}
+.gm-card-m.up{background:var(--g-chip)}
+.gm-card-m.ok{background:var(--g-ok);color:var(--g-ok-ink)}
+.gm-sent{font-size:17px;line-height:1.5}
+.gm-sent u{text-decoration:none;display:inline-block;min-width:72px;border-bottom:3px solid var(--g-acc);text-align:center}
+.gm-word{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.gm-word span{min-width:28px;height:42px;border-bottom:4px solid currentColor;display:grid;place-items:center;font-family:var(--g-head);font-size:22px}
+.gm-keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px}
+.gm-key{font:inherit;font-family:var(--g-head);font-size:17px;min-height:46px;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);cursor:pointer}
+.gm-key.hit{background:var(--g-ok);color:var(--g-ok-ink)}
+.gm-key.miss{opacity:.3}
+.gm-big{font-size:58px;text-align:center;line-height:1}
+.gm-starrow{font-size:40px;text-align:center;letter-spacing:6px;color:var(--g-star)}
+.gm-starrow .off{opacity:.22}
+.gm-recap{margin:0 auto;padding-left:22px;font-size:14px;display:grid;gap:2px}
+/* 10 anos: blocos (Minecraft, Roblox) */
+.gm[data-th=blocos]{--g-bg:linear-gradient(#86CDF5 0 62%,#5DB547 62% 65%,#8B5A2B 65%);--g-ink:#10202B;--g-panel:#C6C6C6;--g-pink:#1E1E1E;--g-bd:4px solid #2B2B2B;--g-r:0;--g-sh:inset -4px -4px 0 #8B8B8B,inset 4px 4px 0 #EDEDED;--g-acc:#5DB547;--g-acc-ink:#0F2A08;--g-chip:#E8D3A6;--g-chip-ink:#2B1B0A;--g-ok:#5DB547;--g-ok-ink:#0F2A08;--g-line:#6B6B6B;--g-field:linear-gradient(#86CDF5,#C9ECFB);--g-back:#8B5A2B;--g-star:#F5C400;--g-font:'Fredoka',system-ui,sans-serif;--g-head:'Press Start 2P','Courier New',monospace;--g-ls:0}
+.gm[data-th=blocos] .gm-tt b{font-size:13px;line-height:1.5}
+.gm[data-th=blocos] .gm-h{font-size:14px;line-height:1.7}
+.gm[data-th=blocos] .gm-btn{font-size:13px}
+.gm[data-th=blocos] .gm-hud,.gm[data-th=blocos] .gm-kick,.gm[data-th=blocos] .gm-slot b{font-size:10px;line-height:1.6}
+.gm[data-th=blocos] .gm-word span,.gm[data-th=blocos] .gm-key{font-size:14px}
+.gm[data-th=blocos] .gm-starrow{color:#F5C400;text-shadow:3px 3px 0 #2B2B2B}
+/* 11 anos: corrida de festa (Stumble Guys, Fall Guys) */
+.gm[data-th=corrida]{--g-bg:linear-gradient(160deg,#FF5FA2,#7B5CFF);--g-ink:#FFFFFF;--g-panel:#FFFFFF;--g-pink:#2B1B5C;--g-bd:3px solid #2B1B5C;--g-r:22px;--g-sh:0 5px 0 #2B1B5C;--g-acc:#FFD23F;--g-acc-ink:#2B1B5C;--g-chip:#ECE6FF;--g-chip-ink:#2B1B5C;--g-ok:#3DDC97;--g-ok-ink:#0B3324;--g-line:#B8AAF0;--g-field:linear-gradient(#BDE9FF,#F3EEFF);--g-back:#7B5CFF;--g-star:#FFB800;--g-font:'Fredoka',system-ui,sans-serif;--g-head:'Fredoka',system-ui,sans-serif;--g-ls:0}
+.gm[data-th=corrida] .gm-tt b,.gm[data-th=corrida] .gm-h{font-weight:700}
+.gm[data-th=corrida] .gm-starrow{color:#FFB800;text-shadow:0 3px 0 #2B1B5C}
+/* 12 anos: treinador de criaturas (Pokémon) */
+.gm[data-th=criaturas]{--g-bg:linear-gradient(180deg,#FFCB05 0 42%,#FFF6D5 42%);--g-ink:#1D2A5C;--g-panel:#FFFFFF;--g-pink:#1D2A5C;--g-bd:3px solid #2A75BB;--g-r:16px;--g-sh:0 4px 0 #1D4F86;--g-acc:#E3350D;--g-acc-ink:#FFFFFF;--g-chip:#EAF3FF;--g-chip-ink:#1D2A5C;--g-ok:#5DBB63;--g-ok-ink:#0E2B10;--g-line:#9CC1E8;--g-field:radial-gradient(circle at 50% 120%,#9BE07A,#E6F8D6 60%);--g-back:#E3350D;--g-star:#E3A100;--g-font:'Baloo 2',system-ui,sans-serif;--g-head:'Baloo 2',system-ui,sans-serif;--g-ls:0}
+.gm[data-th=criaturas] .gm-tt b,.gm[data-th=criaturas] .gm-h{font-weight:800}
+/* 13 anos: arena (Brawl Stars, Clash Royale) */
+.gm[data-th=brawl]{--g-bg:repeating-linear-gradient(135deg,#1B2B6B 0 26px,#22357F 26px 52px);--g-ink:#FFFFFF;--g-panel:#3150D6;--g-pink:#FFFFFF;--g-bd:3px solid #0A0F2A;--g-r:14px;--g-sh:0 5px 0 #0A0F2A;--g-acc:#FFC800;--g-acc-ink:#1A1200;--g-chip:#FFFFFF;--g-chip-ink:#0A0F2A;--g-ok:#3CD070;--g-ok-ink:#06210F;--g-line:#7F96F5;--g-field:linear-gradient(#5B7BFF,#2E4BC6);--g-back:#FFC800;--g-star:#FFC800;--g-font:'Fredoka',system-ui,sans-serif;--g-head:'Lilita One',Impact,sans-serif;--g-ls:.02em}
+.gm[data-th=brawl] .gm-tt b,.gm[data-th=brawl] .gm-h,.gm[data-th=brawl] .gm-btn{text-shadow:0 2px 0 #0A0F2A}
+.gm[data-th=brawl] .gm-btn{text-shadow:none}
+.gm[data-th=brawl] .gm-starrow{text-shadow:0 4px 0 #0A0F2A}
+/* 14 anos: zona de sobrevivência (Free Fire, battle royale) */
+.gm[data-th=zona]{--g-bg:linear-gradient(rgba(255,107,26,.07) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,rgba(255,107,26,.07) 1px,transparent 1px) 0 0/28px 28px,#11161B;--g-ink:#E8EEF2;--g-panel:#1A2128;--g-pink:#E8EEF2;--g-bd:1px solid #FF6B1A80;--g-r:4px;--g-sh:none;--g-acc:#FF6B1A;--g-acc-ink:#140800;--g-chip:#26303A;--g-chip-ink:#E8EEF2;--g-ok:#19C37D;--g-ok-ink:#03170D;--g-line:#3C4855;--g-field:radial-gradient(circle at 50% 50%,#24323D,#0C1014);--g-back:#2B3540;--g-star:#FFB020;--g-font:'Oxanium',system-ui,sans-serif;--g-head:'Oxanium',system-ui,sans-serif;--g-ls:.06em}
+.gm[data-th=zona] .gm-tt b,.gm[data-th=zona] .gm-h,.gm[data-th=zona] .gm-btn,.gm[data-th=zona] .gm-hud{text-transform:uppercase}
+.gm[data-th=zona] .gm-time i{background:linear-gradient(90deg,#FF2D2D,#FF6B1A)}
+/* 15 anos: liga (EA FC, esports) */
+.gm[data-th=liga]{--g-bg:repeating-linear-gradient(90deg,#0B3D2E 0 60px,#0E4535 60px 120px);--g-ink:#F2F7F0;--g-panel:#0F1E28;--g-pink:#F2F7F0;--g-bd:1px solid #C6FF3D59;--g-r:10px;--g-sh:0 8px 24px #00000059;--g-acc:#C6FF3D;--g-acc-ink:#0B1A10;--g-chip:#18303D;--g-chip-ink:#F2F7F0;--g-ok:#C6FF3D;--g-ok-ink:#0B1A10;--g-line:#3A5A66;--g-field:repeating-linear-gradient(0deg,#0E5A3F 0 40px,#0C5038 40px 80px);--g-back:#18303D;--g-star:#C6FF3D;--g-font:'Rajdhani',system-ui,sans-serif;--g-head:'Rajdhani',system-ui,sans-serif;--g-ls:.04em}
+.gm[data-th=liga] .gm-tt b,.gm[data-th=liga] .gm-h,.gm[data-th=liga] .gm-btn,.gm[data-th=liga] .gm-hud{text-transform:uppercase;font-weight:700}
+.gm[data-th=liga]{font-weight:600}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -800,7 +884,8 @@ const ICONS={
  grid:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
  book:'<path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 1h13"/><path d="M8 7h7M8 11h5"/>',
  pen:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
- back:'<path d="M15 6l-6 6 6 6"/>'
+ back:'<path d="M15 6l-6 6 6 6"/>',
+ game:'<rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="18" cy="13.5" r="1"/>'
 };
 const ic=(n,cls)=>'<svg class="i'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';
 const BRAND='<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#B8820C"/><circle cx="20" cy="20" r="15.2" fill="none" stroke="#FFF7E0" stroke-width="1.2" stroke-dasharray="2 2.2" opacity=".85"/><path d="M9.5 28l10.5-17 10.5 17z" fill="#173F2B"/><path d="M20 11l3.6 5.8h-7.2z" fill="#FFF7E0"/><path d="M14 28l6-6 6 6" fill="none" stroke="#FFF7E0" stroke-width="1.3" stroke-dasharray="1.6 1.8"/></svg>';
@@ -1402,7 +1487,8 @@ function reqHtml(it,t,m,canEdit,leader){
   if(st==='aprovado') meta='Aprovado por '+esc(firstName(nameOf(e.by)))+' em '+fmtDate(e.at);
   else if(st==='enviado') meta='Aguardando aprovação desde '+fmtDate(e.at)+(t.id===m.id?'. Para editar, cancele o envio.':'');
   else if(st==='devolvido') meta='Devolvido por '+esc(firstName(nameOf(e.by)))+'. Ajuste e envie de novo.';
-  let acts='<span class="xp-tag">+'+it.xp+' XP</span>';
+  const gb=gmBest(t,it.key);
+  let acts='<button class="btn sm ghost gm-play" data-act="play" data-id="'+esc(t.id)+'" data-key="'+it.key+'" aria-label="Jogar o minijogo deste requisito">'+ic('game')+'Jogar'+(gb&&gb.s?gmStars(gb.s):'')+'</button><span class="xp-tag">+'+it.xp+' XP</span>';
   if(canEdit){
     if(leader){
       if(st==='aprovado') acts+='<button class="btn sm ghost" data-act="unapprove" data-id="'+esc(t.id)+'" data-key="'+it.key+'">'+ic('undo')+'Desfazer</button>';
@@ -1960,6 +2046,272 @@ function modeNote(){
 }
 
 /* =========================================================
+   MINIJOGOS — cada requisito vira um jogo, com a cara da idade
+   (estilos inspirados nos jogos mais jogados em cada faixa)
+   ========================================================= */
+const GM_THEMES={
+ 10:{id:'blocos',name:'Mundo de Blocos',inspo:'Minecraft e Roblox',icon:'⛏️',life:'❤️',lifeName:'corações',back:'🟫',emo:['💎','🟩','🪵','⭐','🧱','🍎'],win:'Construído!',lose:'Ops, o bloco quebrou!',pts:'blocos',wave:'square',
+   n:4,time:0,lives:5,speed:.55,hint:true,pairs:3,
+   say:{ordem:'Empilhe os blocos na ordem certa, do primeiro ao último.',caca:'Minere só os blocos certos que vão caindo. Cuidado com os falsos!',memoria:'Ache os pares de blocos iguais.',forca:'Descubra a palavra secreta, letra por letra, antes de acabarem os corações.',quiz:'Escolha o bloco que completa a frase do requisito.'}},
+ 11:{id:'corrida',name:'Corrida Maluca',inspo:'Stumble Guys e Fall Guys',icon:'🏁',life:'🎈',lifeName:'balões',back:'❓',emo:['🎉','⭐','🍭','🏅','🎈','🍩'],win:'Classificado!',lose:'Caiu da plataforma!',pts:'pontos',wave:'triangle',
+   n:5,time:0,lives:4,speed:.7,hint:true,pairs:4,
+   say:{ordem:'Pule nas plataformas na ordem certa para chegar ao fim da pista!',caca:'Pegue os itens certos que caem na pista e desvie dos errados.',memoria:'Abra as portas e ache os pares iguais.',forca:'Adivinhe a palavra antes de estourar todos os balões.',quiz:'Escolha a porta certa para completar a frase.'}},
+ 12:{id:'criaturas',name:'Treinador de Criaturas',inspo:'Pokémon',icon:'🔴',life:'🔴',lifeName:'cápsulas',back:'⚪',emo:['🐉','🦊','🐢','🦉','🐸','🦋'],win:'Criatura capturada!',lose:'A criatura fugiu!',pts:'XP de treinador',wave:'square',
+   n:5,time:90,lives:4,speed:.85,hint:false,pairs:4,
+   say:{ordem:'Organize sua equipe na ordem certa para a batalha.',caca:'Capture só as criaturas certas que aparecem!',memoria:'Encontre as cartas iguais para completar a coleção.',forca:'Descubra o nome secreto, letra por letra.',quiz:'Escolha o golpe certo para completar a frase.'}},
+ 13:{id:'brawl',name:'Arena Brawl',inspo:'Brawl Stars e Clash Royale',icon:'🏆',life:'🛡️',lifeName:'escudos',back:'💥',emo:['🏆','💥','⚡','👑','💣','🔥'],win:'Vitória!',lose:'Derrota… bora revanche?',pts:'troféus',wave:'sawtooth',
+   n:6,time:75,lives:3,speed:1,hint:false,pairs:5,
+   say:{ordem:'Monte o combo na ordem certa!',caca:'Acerte só os alvos certos. Errar custa escudo!',memoria:'Ache os pares e ganhe troféus.',forca:'Descubra a palavra antes de perder os escudos.',quiz:'Escolha a carta certa para completar a frase.'}},
+ 14:{id:'zona',name:'Zona de Sobrevivência',inspo:'Free Fire e battle royale',icon:'🎯',life:'🩹',lifeName:'kits médicos',back:'📦',emo:['🎯','🪂','🔥','🛡️','📦','🧭'],win:'Último de pé!',lose:'Eliminado pela zona',pts:'pontos de sobrevivência',wave:'sawtooth',
+   n:7,time:60,lives:3,speed:1.2,hint:false,pairs:6,
+   say:{ordem:'Pouse nos pontos na ordem certa antes que a zona feche.',caca:'Colete só os suprimentos certos que caem do avião.',memoria:'Abra as caixas e ache os pares antes da zona fechar.',forca:'Decifre o código antes de ficar sem kits médicos.',quiz:'Escolha a rota certa para completar a frase.'}},
+ 15:{id:'liga',name:'Liga Pro',inspo:'EA FC, futebol e esports',icon:'⚽',life:'🔋',lifeName:'energia',back:'⚽',emo:['⚽','🥅','🏆','🔥','🎯','⭐'],win:'GG! Vitória na Liga',lose:'Fim de jogo',pts:'pontos de ranking',wave:'sine',
+   n:8,time:50,lives:2,speed:1.4,hint:false,pairs:6,
+   say:{ordem:'Monte a jogada na ordem certa, passe por passe.',caca:'Intercepte só as bolas certas. Errar dá cartão!',memoria:'Ache os pares e suba no ranking.',forca:'Descubra a palavra antes de acabar a energia.',quiz:'Escolha a jogada certa para completar a frase.'}}
+};
+const GM_MODES={ordem:'Ordem certa',caca:'Pega-pega',memoria:'Memória',forca:'Palavra secreta',quiz:'Complete a frase'};
+const GM_FONTS='https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Fredoka:wght@500;700&family=Lilita+One&family=Oxanium:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@600;700&display=swap';
+const BIBLE_AT=['Gênesis','Êxodo','Levítico','Números','Deuteronômio','Josué','Juízes','Rute','1 Samuel','2 Samuel','1 Reis','2 Reis','1 Crônicas','2 Crônicas','Esdras','Neemias','Ester','Jó','Salmos','Provérbios','Eclesiastes','Cantares','Isaías','Jeremias','Lamentações','Ezequiel','Daniel','Oseias','Joel','Amós','Obadias','Jonas','Miqueias','Naum','Habacuque','Sofonias','Ageu','Zacarias','Malaquias'];
+const BIBLE_NT=['Mateus','Marcos','Lucas','João','Atos','Romanos','1 Coríntios','2 Coríntios','Gálatas','Efésios','Filipenses','Colossenses','1 Tessalonicenses','2 Tessalonicenses','1 Timóteo','2 Timóteo','Tito','Filemom','Hebreus','Tiago','1 Pedro','2 Pedro','1 João','2 João','3 João','Judas','Apocalipse'];
+const BIBLE=BIBLE_AT.concat(BIBLE_NT);
+const BOOK_ABBR={'Gn':'Gênesis','Êx':'Êxodo','Lv':'Levítico','Nm':'Números','Dt':'Deuteronômio','Js':'Josué','Jz':'Juízes','Rt':'Rute','1 Sm':'1 Samuel','2 Sm':'2 Samuel','1 Rs':'1 Reis','2 Rs':'2 Reis','1 Cr':'1 Crônicas','2 Cr':'2 Crônicas','Ed':'Esdras','Ne':'Neemias','Et':'Ester','Jó':'Jó','Sl':'Salmos','Pv':'Provérbios','Ec':'Eclesiastes','Is':'Isaías','Jr':'Jeremias','Dn':'Daniel','Jl':'Joel','Am':'Amós','Jn':'Jonas','Mq':'Miqueias','Ag':'Ageu','Zc':'Zacarias','Ml':'Malaquias','Mt':'Mateus','Mc':'Marcos','Lc':'Lucas','Jo':'João','At':'Atos','Rm':'Romanos','1 Co':'1 Coríntios','2 Co':'2 Coríntios','Gl':'Gálatas','Ef':'Efésios','Fp':'Filipenses','Cl':'Colossenses','1 Ts':'1 Tessalonicenses','2 Ts':'2 Tessalonicenses','1 Tm':'1 Timóteo','2 Tm':'2 Timóteo','Fm':'Filemom','Hb':'Hebreus','Tg':'Tiago','1 Pe':'1 Pedro','2 Pe':'2 Pedro','1 Jo':'1 João','Jd':'Judas','Ap':'Apocalipse'};
+/* conteúdos para decorar: ordem = a sequência importa; caca = pegar os certos entre os errados */
+const GM_BANK={
+ voto:{t:'Voto do Desbravador',mode:'frase',items:['Pela graça de Deus,','serei puro,','bondoso','e leal;','guardarei a Lei do Desbravador;','serei servo de Deus','e amigo de todos.']},
+ lei:{t:'Lei do Desbravador',mode:'ordem',items:['Observar a devoção matinal','Cumprir fielmente a parte que me corresponde','Cuidar de meu corpo','Manter a consciência limpa','Ser cortês e obediente','Andar com reverência na casa de Deus','Ter sempre um cântico no coração','Ir aonde Deus mandar']},
+ alvo:{t:'Alvo JA',mode:'frase',items:'A mensagem do advento a todo o mundo em minha geração.'},
+ lema:{t:'Lema JA',mode:'frase',items:'O amor de Cristo me motiva.'},
+ objetivo:{t:'Objetivo JA',mode:'frase',items:'Salvar do pecado e guiar no serviço.'},
+ criacao:{t:'O que Deus criou em cada dia',mode:'ordem',label:'Dia',items:['Luz: dia e noite','Firmamento: o céu separando as águas','Terra seca, mares e plantas','Sol, lua e estrelas','Peixes e aves','Animais terrestres e o ser humano','Descanso: o sábado']},
+ pragas:{t:'As 10 pragas do Egito',mode:'ordem',label:'Praga',items:['Água em sangue','Rãs','Piolhos','Moscas','Peste nos animais','Úlceras','Granizo','Gafanhotos','Trevas','Morte dos primogênitos']},
+ at:{t:'Livros do Antigo Testamento',mode:'ordem',label:'Livro',items:BIBLE_AT},
+ nt:{t:'Livros do Novo Testamento',mode:'ordem',label:'Livro',items:BIBLE_NT},
+ mandamentos:{t:'Os 10 Mandamentos',mode:'ordem',label:'Mandamento',items:['Não terás outros deuses diante de mim','Não farás para ti imagem de escultura','Não tomarás o nome do Senhor em vão','Lembra-te do dia de sábado, para o santificar','Honra teu pai e tua mãe','Não matarás','Não adulterarás','Não furtarás','Não dirás falso testemunho','Não cobiçarás']},
+ fruto:{t:'O Fruto do Espírito (Gálatas 5:22-23)',mode:'ordem',items:['Amor','Alegria','Paz','Longanimidade','Benignidade','Bondade','Fidelidade','Mansidão','Domínio próprio']},
+ igrejas:{t:'As 7 igrejas do Apocalipse',mode:'ordem',label:'Igreja',items:['Éfeso','Esmirna','Pérgamo','Tiatira','Sardes','Filadélfia','Laodiceia']},
+ tribos:{t:'As 12 tribos de Israel',mode:'caca',items:['Rúben','Simeão','Levi','Judá','Dã','Naftali','Gade','Aser','Issacar','Zebulom','José','Benjamim'],bad:['Moisés','Davi','Elias','Samuel','Noé','Abraão','Isaque','Salomão','Daniel','Josué','Calebe','Gideão']},
+ apostolos:{t:'Os 12 apóstolos',mode:'caca',items:['Pedro','André','Tiago, filho de Zebedeu','João','Filipe','Bartolomeu','Tomé','Mateus','Tiago, filho de Alfeu','Tadeu','Simão, o zelote','Judas Iscariotes'],bad:['Estêvão','Silas','Timóteo','Lázaro','Nicodemos','Zaqueu','Marcos','Lucas','Apolo','Áquila','Natã','Elias']}
+};
+const GM_MATCH=[[/criacao/,'criacao'],[/pragas/,'pragas'],[/tribos/,'tribos'],[/antigo testamento/,'at'],[/novo testamento/,'nt'],[/mandamentos/,'mandamentos'],[/apostolos/,'apostolos'],[/fruto do espirito/,'fruto'],[/igrejas do apocalipse/,'igrejas']];
+const GM_STOP=new Set('sobre entre menos todos todas cada pelos pelas seus suas outro outra outros outras durante fazer minimo ainda realizada atraves quando depois antes mesmo muito pouco algum alguma alguns algumas desta deste dessa desse essas esses estas estes nossa nosso voce maior menor tambem podem possa seja sendo foram tenha tiver aquele aquela coisa coisas forma formas maneira'.split(' '));
+const gmShuffle=a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const x=a[i]; a[i]=a[j]; a[j]=x; } return a; };
+const gmPick=(a,n)=>gmShuffle(a).slice(0,n);
+const gmHash=s=>{ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return Math.abs(h); };
+function gmWords(txt){ const out=[], seen={}; String(txt).split(/[^A-Za-zÀ-ÿ]+/).forEach(w=>{ const n=normTxt(w); if(n.length>=5&&!GM_STOP.has(n)&&!seen[n]){ seen[n]=1; out.push(w); } }); return out; }
+let GM_BOOKN=null;
+function isVerse(s){ if(!GM_BOOKN) GM_BOOKN=BIBLE.map(normTxt).concat(['salmo']); const n=normTxt(s).replace(/^iii /,'3 ').replace(/^ii /,'2 ').replace(/^i /,'1 '); return /\d/.test(n)&&GM_BOOKN.some(b=>n.indexOf(b+' ')===0); }
+let GM_POOL=null;
+function gmPools(){
+  if(GM_POOL) return GM_POOL; const verses=[], seen={};
+  Object.keys(ITEM).forEach(k=>{ const it=ITEM[k]; (it.a||[]).concat(it.o||[]).forEach(s=>{ if(isVerse(s)&&!seen[s]){ seen[s]=1; verses.push(s); } }); });
+  return (GM_POOL={verses:verses,esp:ESP.map(e=>e.n)});
+}
+function planBooks(it){
+  const keys=Object.keys(BOOK_ABBR).sort((a,b)=>b.length-a.length), got={};
+  String(it.i).split('·').forEach(seg=>{ seg=seg.trim(); const k=keys.find(a=>seg===a||seg.indexOf(a+' ')===0); if(k) got[BOOK_ABBR[k]]=1; });
+  return BIBLE.filter(b=>got[b]);
+}
+/* os desafios de um requisito: conteúdo dele vira o jogo */
+function gmChallenges(it){
+  const out=[], nt=normTxt(it.t), P=gmPools();
+  const add=(id,c)=>{ if(!out.some(x=>x.id===id)) out.push(Object.assign({id:id},c)); };
+  const bank=id=>{ const b=GM_BANK[id]; add(id,{mode:b.mode==='frase'?'ordem':b.mode,title:b.t,items:b.mode==='frase'?(Array.isArray(b.items)?b.items:b.items.split(' ')):b.items,bad:b.bad,label:b.label,plain:b.plain||b.mode==='frase',full:b.mode==='frase'}); };
+  if(/voto e a lei/.test(nt)){ bank('voto'); bank('lei'); }
+  else if(/lei do desbravador/.test(nt)) bank('lei');
+  else if(/voto do desbravador/.test(nt)) bank('voto');
+  if(/alvo e o lema/.test(nt)){ bank('alvo'); bank('lema'); }
+  if(/objetivo ja/.test(nt)) bank('objetivo');
+  (it.a||[]).forEach(s=>{ const n=normTxt(s); GM_MATCH.forEach(m=>{ if(m[0].test(n)) bank(m[1]); }); });
+  if(it.i){ let bs=planBooks(it); if(bs.length<4){ const s=Math.max(0,BIBLE.indexOf(bs[0]||'Gênesis')); bs=BIBLE.slice(s,s+8); } add('leitura',{mode:'ordem',title:'Livros do seu plano de leitura, na ordem da Bíblia',items:bs,plain:true}); }
+  if(it.o&&it.o.length>=2){ const esp=it.o.filter(o=>ESP_BY_NAME[normTxt(o)]);
+    if(esp.length>=2) add('opcoes',{mode:'caca',title:'Especialidades que valem para este requisito',items:esp,bad:P.esp.filter(n=>esp.indexOf(n)<0)});
+    else add('opcoes',{mode:'memoria',title:'As opções deste requisito',items:it.o}); }
+  if(it.a&&!out.length){ const vs=it.a.filter(isVerse);
+    if(vs.length>=2) add('versos',{mode:'caca',title:'Os versos do seu cartão',items:vs,bad:P.verses.filter(v=>vs.indexOf(v)<0)});
+    else add('itens',{mode:'memoria',title:'Os itens deste requisito',items:it.a}); }
+  const words=gmWords(it.t), quiz=words.length>=2&&gmHash(it.key)%2===0;
+  if(words.length) add('texto',{mode:quiz?'quiz':'forca',title:quiz?'o texto do requisito':'uma palavra do requisito',words:words});
+  if(!out.length) add('texto',{mode:'forca',title:'Palavra secreta',words:['Desbravador']});
+  return out;
+}
+const gmAge=t=>{ const a=ageOf(t.birth); return Math.max(10,Math.min(15,a!=null?a:CLS[memberClass(t)].age)); };
+const GKEY=t=>'trilha-dbv.jogos.'+Store.mode+'.'+t.id;
+const gmBest=(t,key)=>(LS.get(GKEY(t))||{})[key]||null;
+const gmStars=n=>'<span class="gm-stars" aria-label="'+n+' de 3 estrelas">'+'★'.repeat(n)+'</span>';
+let gmAC=null;
+function gmBeep(f,d,type){
+  if(LS.get('trilha-dbv.jogos.mudo')) return;
+  try{ gmAC=gmAC||new (window.AudioContext||window.webkitAudioContext)(); const o=gmAC.createOscillator(), g=gmAC.createGain(), t=gmAC.currentTime;
+    o.type=type||'square'; o.frequency.value=f; g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(gmAC.destination); o.start(t); o.stop(t+d); }catch(e){}
+}
+
+const Game={
+  root:null, G:null, raf:0, timer:0, fonts:false,
+  th(){ return GM_THEMES[this.G.age]; },
+  ch(){ return this.G.list[this.G.sel]; },
+  open(t,it){
+    if(!this.fonts){ this.fonts=true; const l=document.createElement('link'); l.rel='stylesheet'; l.href=GM_FONTS; document.head.appendChild(l); }
+    this.close(true);
+    const who=me();
+    this.G={t:t,it:it,age:gmAge(t),list:gmChallenges(it),sel:0,phase:'intro',self:!!who&&who.id===t.id&&!Store.readOnly};
+    this.root=document.createElement('div'); this.root.id='gm'; document.body.appendChild(this.root);
+    this.root.addEventListener('click',ev=>{ const b=ev.target.closest('[data-g]'); if(b) this.act(b); });
+    document.documentElement.style.overflow='hidden';
+    this.draw(); const x=this.root.querySelector('[data-g="start"]'); if(x) x.focus();
+  },
+  close(quiet){
+    this.stop(); if(this.root) this.root.remove(); this.root=null; const had=!!this.G; this.G=null; document.documentElement.style.overflow='';
+    if(had&&!quiet) render();
+  },
+  stop(){ cancelAnimationFrame(this.raf); this.raf=0; clearInterval(this.timer); this.timer=0; },
+  act(b){
+    const G=this.G, a=b.dataset.g; if(!G) return;
+    if(a==='close') return this.close();
+    if(a==='mute'){ LS.set('trilha-dbv.jogos.mudo',!LS.get('trilha-dbv.jogos.mudo')); return this.draw(); }
+    if(a==='age'){ G.age=+b.dataset.v; return this.draw(); }
+    if(a==='sel'){ G.sel=+b.dataset.i; return this.draw(); }
+    if(a==='intro'){ this.stop(); G.phase='intro'; return this.draw(); }
+    if(a==='start') return this.start();
+    if(G.phase!=='play'||G.over) return;
+    if(a==='chip') this.tapOrdem(b); else if(a==='tok') this.tapCaca(b); else if(a==='card') this.tapCard(b); else if(a==='key') this.tapKey(b); else if(a==='opt') this.tapOpt(b);
+  },
+  /* ---------- telas ---------- */
+  draw(){
+    const G=this.G, th=this.th(), it=G.it, mute=LS.get('trilha-dbv.jogos.mudo');
+    const top='<div class="gm-top"><span class="gm-logo" aria-hidden="true">'+th.icon+'</span><div class="gm-tt"><b>'+esc(th.name)+'</b><small>'+esc(CLS[it.cls].name)+(it.adv?' avançada':'')+' · requisito '+esc(itemLabel(it))+'</small></div>'+
+      '<button class="gm-x" data-g="mute" aria-label="'+(mute?'Ligar som':'Desligar som')+'">'+(mute?'🔇':'🔊')+'</button><button class="gm-x" data-g="close" aria-label="Fechar o jogo">✕</button></div>';
+    let body='';
+    if(G.phase==='intro') body=this.introHtml();
+    else if(G.phase==='play') body='<div class="gm-card gm-play"><div class="gm-hud" aria-live="polite"></div><div class="gm-board"></div></div>';
+    else body=this.endHtml();
+    this.root.innerHTML='<div class="gm" data-th="'+th.id+'" role="dialog" aria-modal="true" aria-label="Minijogo do requisito"><div class="gm-in">'+top+body+'</div></div>';
+    if(G.phase==='play'){ this.hud(); this.board(); }
+  },
+  introHtml(){
+    const G=this.G, th=this.th(), c=this.ch(), best=gmBest(G.t,G.it.key);
+    return '<div class="gm-card"><p class="gm-kick">Requisito</p><p class="gm-req">'+esc(G.it.t)+'</p></div>'+
+     (G.list.length>1?'<div class="gm-card"><p class="gm-kick">Escolha o desafio</p><div class="gm-row">'+G.list.map((x,i)=>'<button class="gm-opt'+(i===G.sel?' on':'')+'" data-g="sel" data-i="'+i+'" aria-pressed="'+(i===G.sel)+'">'+esc(GM_MODES[x.mode])+': '+esc(x.title)+'</button>').join('')+'</div></div>':'')+
+     '<div class="gm-card"><p class="gm-kick">'+esc(GM_MODES[c.mode])+(c.title?' · '+esc(c.title):'')+'</p><h2 class="gm-h">'+esc(th.say[c.mode])+'</h2>'+
+      '<p class="gm-note">'+(th.time?'Tempo: '+th.time+' segundos. ':'Sem pressa: não tem relógio. ')+(c.mode==='memoria'?'':'Você tem '+(c.mode==='forca'?th.lives+2:th.lives)+' '+esc(th.lifeName)+'. ')+(best?'Seu recorde: '+'★'.repeat(best.s)+' · '+best.p+' '+esc(th.pts)+'.':'')+'</p>'+
+      '<div class="gm-row"><button class="gm-btn" data-g="start">Jogar ▶</button></div></div>'+
+     '<div class="gm-card"><p class="gm-kick">Estilo da idade</p><div class="gm-row">'+Object.keys(GM_THEMES).map(a=>'<button class="gm-opt'+(+a===G.age?' on':'')+'" data-g="age" data-v="'+a+'" aria-pressed="'+(+a===G.age)+'">'+a+' anos · '+esc(GM_THEMES[a].name)+'</button>').join('')+'</div>'+
+      '<p class="gm-note">Começa pela idade de '+esc(firstName(G.t.name))+'. Quanto mais velho, mais rápido e com menos ajuda. Estilo inspirado em '+esc(th.inspo)+'.</p></div>';
+  },
+  endHtml(){
+    const G=this.G, th=this.th(), r=G.result;
+    const rank=G.age===15?['Sem divisão','Bronze','Prata','Ouro'][r.stars]:'';
+    return '<div class="gm-card gm-end"><div class="gm-big" aria-hidden="true">'+(r.win?th.emo[2]:'💫')+'</div><h2 class="gm-h" style="text-align:center">'+esc(r.win?th.win:th.lose)+'</h2>'+
+     '<div class="gm-starrow" aria-label="'+r.stars+' de 3 estrelas">'+[0,1,2].map(i=>'<span class="'+(i<r.stars?'':'off')+'">★</span>').join('')+'</div>'+
+     '<p style="text-align:center"><b class="num">'+r.score+'</b> '+esc(th.pts)+' · '+r.err+' erro'+(r.err===1?'':'s')+(rank?' · Divisão '+rank:'')+(r.record?' · <b>novo recorde!</b>':'')+'</p>'+
+     (r.win&&this.ch().mode==='ordem'?'<ol class="gm-recap">'+this.G.seq.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+
+     (r.answer?'<p class="gm-note" style="text-align:center">A palavra era <b>'+esc(r.answer)+'</b>.</p>':'')+
+     '<p class="gm-note" style="text-align:center">'+(G.self?'O jogo é treino: o requisito continua sendo enviado e aprovado no cartão.':'Prévia da liderança: as estrelas só ficam guardadas quando o próprio desbravador joga.')+'</p>'+
+     '<div class="gm-row" style="justify-content:center"><button class="gm-btn" data-g="start">Jogar de novo</button>'+(G.list.length>1?'<button class="gm-btn alt" data-g="intro">Outro desafio</button>':'')+'<button class="gm-btn alt" data-g="close">Voltar ao cartão</button></div></div>';
+  },
+  hud(){
+    const G=this.G, th=this.th(), el=this.root&&this.root.querySelector('.gm-hud'); if(!el) return;
+    const c=this.ch(), prog=c.mode==='ordem'?G.done+'/'+G.seq.length:c.mode==='caca'?G.got+'/'+G.target:c.mode==='memoria'?Object.keys(G.found).length+'/'+G.pairs:c.mode==='quiz'?Math.min(G.q+1,G.rounds.length)+'/'+G.rounds.length:'';
+    el.innerHTML=(c.mode==='memoria'?'<span>Erros: <b class="num">'+G.err+'</b></span>':'<span class="gm-lives" aria-label="'+G.lives+' '+esc(th.lifeName)+'">'+(th.life.repeat(Math.max(0,G.lives))||'—')+'</span>')+
+      (prog?'<span class="num">'+prog+'</span>':'')+'<span class="num">'+G.score+' '+esc(th.pts)+'</span>'+
+      (th.time?'<span class="gm-time" role="progressbar" aria-label="Tempo" aria-valuemin="0" aria-valuemax="'+th.time+'" aria-valuenow="'+Math.max(0,Math.ceil(G.left))+'"><i style="width:'+Math.max(0,G.left/th.time*100)+'%"></i></span>':'');
+  },
+  /* ---------- começar ---------- */
+  start(){
+    this.stop(); const G=this.G, th=this.th(), c=this.ch();
+    Object.assign(G,{phase:'play',over:false,score:0,err:0,lives:th.lives,left:th.time,t0:Date.now(),result:null});
+    if(c.mode==='ordem'){ const n=c.full?c.items.length:Math.min(th.n,c.items.length), s=Math.floor(Math.random()*(c.items.length-n+1));
+      G.seq=c.items.slice(s,s+n); G.base=c.plain?0:s; G.done=0; G.pool=gmShuffle(G.seq.map((_,i)=>i)); }
+    else if(c.mode==='caca'){ G.target=Math.min(th.n,c.items.length); G.got=0; G.caught={}; G.tokens=[]; G.spawnIn=300; G.last=0; }
+    else if(c.mode==='memoria'){ G.pairs=Math.min(th.pairs,c.items.length); const pick=gmPick(c.items,G.pairs);
+      G.deck=gmShuffle(pick.concat(pick).map((v,i)=>({v:v,e:th.emo[pick.indexOf(v)%th.emo.length]}))); G.up=[]; G.found={}; G.lock=false; }
+    else if(c.mode==='forca'){ const w=gmPick(c.words,1)[0]; G.word=w; G.guess={}; G.lives=th.lives+2; if(th.hint) G.guess[normTxt(w[0]).toUpperCase()]=true; }
+    else if(c.mode==='quiz'){ const ws=gmPick(c.words,Math.min(G.age<=11?2:3,c.words.length));
+      const pool=[], seen={}; LIST[G.it.cls].reg.concat(LIST[G.it.cls].av).forEach(x=>gmWords(x.t).forEach(w=>{ const n=normTxt(w); if(!seen[n]&&!c.words.some(y=>normTxt(y)===n)){ seen[n]=1; pool.push(w); } }));
+      G.rounds=ws.map(w=>{ const near=pool.filter(p=>Math.abs(p.length-w.length)<=3); const bad=gmPick(near.length>=3?near:pool,3); return {w:w,opts:gmShuffle([w].concat(bad))}; }); G.q=0; G.lock=false; }
+    this.draw();
+    if(th.time) this.timer=setInterval(()=>{ if(!this.G||this.G.phase!=='play') return; this.G.left=th.time-(Date.now()-this.G.t0)/1000; if(this.G.left<=0){ this.G.left=0; this.end(false); } else this.hud(); },250);
+    if(c.mode==='caca') this.raf=requestAnimationFrame(t=>this.loop(t));
+  },
+  board(){
+    const G=this.G, th=this.th(), c=this.ch(), el=this.root&&this.root.querySelector('.gm-board'); if(!el) return;
+    if(c.mode==='ordem'){
+      el.innerHTML='<ol class="gm-slots">'+G.seq.map((x,i)=>'<li class="gm-slot'+(i<G.done?' ok':'')+'"><b>'+(c.label?esc(c.label)+' ':'')+(G.base+i+1)+'</b><span>'+(i<G.done?esc(x):i===G.done&&th.hint&&G.err>=2?esc(x[0])+'…':'')+'</span></li>').join('')+'</ol>'+
+        '<div class="gm-chips">'+G.pool.filter(i=>i>=G.done).map(i=>'<button class="gm-chip" data-g="chip" data-i="'+i+'">'+esc(G.seq[i])+'</button>').join('')+'</div>';
+    } else if(c.mode==='caca'){
+      el.innerHTML='<p class="gm-note">Pegue '+G.target+': '+esc(c.title)+'</p><div class="gm-field" aria-label="Campo do jogo"></div>';
+      G.tokens.forEach(k=>{ k.el=null; }); G.tokens=[];
+    } else if(c.mode==='memoria'){
+      el.innerHTML='<div class="gm-grid">'+G.deck.map((d,i)=>{ const ok=G.found[d.v], up=ok||G.up.indexOf(i)>=0;
+        return '<button class="gm-card-m'+(ok?' ok':up?' up':'')+'" data-g="card" data-i="'+i+'" data-v="'+esc(d.v)+'" aria-label="'+(up?esc(d.v):'Carta virada')+'">'+(up?'<span><span class="e" aria-hidden="true">'+d.e+'</span><br>'+esc(d.v)+'</span>':'<span class="e" aria-hidden="true">'+th.back+'</span>')+'</button>'; }).join('')+'</div>';
+    } else if(c.mode==='forca'){
+      const W=G.word, sent=esc(G.it.t).replace(esc(W),'<u>?</u>');
+      el.innerHTML='<p class="gm-sent">'+sent+'</p><div class="gm-word" aria-label="Palavra secreta">'+W.split('').map(ch=>'<span>'+(G.guess[normTxt(ch).toUpperCase()]?esc(ch.toUpperCase()):'')+'</span>').join('')+'</div>'+
+        '<div class="gm-keys">'+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(L=>{ const g=G.guess[L], hit=g&&normTxt(W).toUpperCase().indexOf(L)>=0; return '<button class="gm-key'+(g?(hit?' hit':' miss'):'')+'" data-g="key" data-v="'+L+'"'+(g?' disabled':'')+'>'+L+'</button>'; }).join('')+'</div>';
+    } else if(c.mode==='quiz'){
+      const r=G.rounds[G.q]; if(!r) return;
+      el.innerHTML='<p class="gm-sent">'+esc(G.it.t).replace(esc(r.w),'<u>&nbsp;</u>')+'</p><div class="gm-opts">'+r.opts.map(o=>'<button class="gm-chip" data-g="opt" data-ok="'+(o===r.w?1:0)+'">'+esc(o)+'</button>').join('')+'</div>';
+    }
+  },
+  good(){ const w=this.th().wave; gmBeep(660,.1,w); setTimeout(()=>gmBeep(990,.12,w),90); },
+  bad(el){ gmBeep(150,.25,'sawtooth'); if(el){ el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); } },
+  miss(el){ const G=this.G; G.err++; G.lives--; this.bad(el); this.hud(); if(G.lives<=0){ G.over=true; setTimeout(()=>{ if(this.G===G&&G.phase==='play') this.end(false); },350); return true; } return false; },
+  /* ---------- mecânicas ---------- */
+  tapOrdem(b){ const G=this.G, i=+b.dataset.i;
+    if(i===G.done){ G.done++; G.score+=100; this.good(); if(G.done>=G.seq.length) return this.end(true); this.board(); this.hud(); }
+    else if(!this.miss(b)&&this.th().hint&&G.err>=2) this.board(); },
+  loop(ts){
+    const G=this.G; if(!G||G.phase!=='play') return; const th=this.th(), c=this.ch();
+    const dt=G.last?Math.min(50,ts-G.last):16; G.last=ts;
+    const field=this.root&&this.root.querySelector('.gm-field');
+    if(field){
+      const H=field.clientHeight;
+      G.spawnIn-=dt;
+      if(G.spawnIn<=0){ G.spawnIn=1300/th.speed;
+        const onField=G.tokens.map(k=>k.txt), cand=c.items.filter(x=>!G.caught[x]&&onField.indexOf(x)<0), bad=(c.bad||[]).filter(x=>onField.indexOf(x)<0);
+        const ok=cand.length&&(!bad.length||Math.random()<.55), txt=ok?gmPick(cand,1)[0]:gmPick(bad,1)[0];
+        if(txt){ const el=document.createElement('button'); el.className='gm-tok'; el.dataset.g='tok'; el.dataset.ok=ok?'1':'0'; el.textContent=txt;
+          el.style.left=(4+Math.random()*50)+'%'; field.appendChild(el); G.tokens.push({txt:txt,ok:!!ok,y:-50,el:el}); }
+      }
+      const v=.06*th.speed*Math.max(1,H/360);
+      G.tokens.forEach(k=>{ k.y+=dt*v; if(k.el) k.el.style.transform='translateY('+k.y+'px)'; if(k.y>H+10){ k.gone=true; if(k.el) k.el.remove(); } });
+      G.tokens=G.tokens.filter(k=>!k.gone);
+    }
+    this.raf=requestAnimationFrame(t=>this.loop(t));
+  },
+  tapCaca(b){ const G=this.G, k=G.tokens.find(x=>x.el===b); if(!k) return;
+    if(k.ok){ k.gone=true; b.remove(); G.tokens=G.tokens.filter(x=>x!==k); G.caught[k.txt]=1; G.got++; G.score+=100; this.good(); this.hud(); if(G.got>=G.target) this.end(true); }
+    else { b.disabled=true; b.style.opacity='.4'; this.miss(b); } },
+  tapCard(b){ const G=this.G, i=+b.dataset.i, d=G.deck[i]; if(G.lock||G.found[d.v]||G.up.indexOf(i)>=0) return;
+    G.up.push(i); this.board();
+    if(G.up.length<2) return gmBeep(520,.05,this.th().wave);
+    const a=G.deck[G.up[0]], z=G.deck[G.up[1]];
+    if(a.v===z.v){ G.found[a.v]=1; G.up=[]; G.score+=150; this.good(); this.board(); this.hud(); if(Object.keys(G.found).length>=G.pairs) this.end(true); }
+    else { G.err++; G.lock=true; this.bad(); this.hud(); setTimeout(()=>{ if(this.G!==G||G.phase!=='play') return; G.up=[]; G.lock=false; this.board(); },G.age<=11?1000:700); } },
+  tapKey(b){ const G=this.G, L=b.dataset.v; if(G.guess[L]) return; G.guess[L]=true; const W=normTxt(G.word).toUpperCase();
+    if(W.indexOf(L)>=0){ G.score+=50*(W.split(L).length-1); this.good(); this.board(); this.hud(); if(W.split('').every(ch=>!/[A-Z]/.test(ch)||G.guess[ch])) this.end(true); }
+    else { this.board(); this.miss(); } },
+  tapOpt(b){ const G=this.G; if(G.lock) return; const ok=b.dataset.ok==='1';
+    if(ok){ G.score+=150; this.good(); b.classList.add('right'); }
+    else { b.classList.add('wrong'); const r=this.root.querySelector('[data-g="opt"][data-ok="1"]'); if(r) r.classList.add('right'); if(this.miss(b)) return; }
+    G.lock=true; setTimeout(()=>{ if(this.G!==G||G.phase!=='play') return; G.lock=false; G.q++; if(G.q>=G.rounds.length) this.end(true); else { this.board(); this.hud(); } },ok?450:1100); },
+  /* ---------- fim ---------- */
+  end(win){
+    const G=this.G; if(!G||G.phase!=='play') return; this.stop(); const th=this.th(), c=this.ch();
+    if(win) G.score+=Math.max(0,G.lives)*50+(th.time?Math.round(Math.max(0,G.left))*5:0);
+    let stars=0;
+    if(win){ if(c.mode==='memoria') stars=G.err<=Math.floor(G.pairs/2)?3:G.err<=G.pairs?2:1; else stars=G.err===0?3:G.err<=Math.max(1,Math.floor(th.lives/2))?2:1; }
+    let record=false;
+    if(G.self){ const all=LS.get(GKEY(G.t))||{}, cur=all[G.it.key]||{s:0,p:0,n:0}; record=win&&(stars>cur.s||G.score>cur.p)&&cur.n>0;
+      all[G.it.key]={s:Math.max(cur.s,stars),p:Math.max(cur.p,win?G.score:0),n:cur.n+1}; LS.set(GKEY(G.t),all); }
+    G.result={win:win,stars:stars,score:G.score,err:G.err,record:record,answer:!win&&c.mode==='forca'?G.word:null};
+    G.phase='end'; this.draw();
+    if(win){ const w=th.wave; [523,659,784,1047].forEach((f,i)=>setTimeout(()=>gmBeep(f,.15,w),i*110)); burst(); }
+    else gmBeep(110,.5,'sawtooth');
+  }
+};
+document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&Game.G) Game.close(); });
+
+/* =========================================================
    AÇÕES
    ========================================================= */
 const normUser=u=>String(u||'').trim().toLowerCase();
@@ -1976,6 +2328,7 @@ const Act={
   go(el){ App.view=el.dataset.view; if(App.view==='esp'){ App.espOpen=null; App.espTab=null; App.espCls=null; } App.ret=null; if(el.dataset.cls){ App.cls=el.dataset.cls; App.adv=false; } if(el.dataset.sec){ App.jump=el.dataset.sec; App.openKey=''; } if(el.dataset.gtab) App.gestTab=el.dataset.gtab; if(el.dataset.rtab) App.rankTab=el.dataset.rtab; App.formErr=''; render(); window.scrollTo({top:0}); },
   openCard(el){ App.view='classes'; App.target=el.dataset.id; App.cls=null; App.adv=false; render(); window.scrollTo({top:0}); },
   pickCls(el){ App.cls=el.dataset.cls; render(); },
+  play(el){ const t=Store.d.members[el.dataset.id], it=ITEM[el.dataset.key]; if(t&&it) Game.open(t,it); },
   pickAdv(el){ App.adv=el.dataset.v==='1'; render(); },
   toggleSec(el){ const s=el.dataset.sec; App.open[s]=!App.open[s]; render(); },
   rankTab(el){ App.rankTab=el.dataset.v; render(); },
