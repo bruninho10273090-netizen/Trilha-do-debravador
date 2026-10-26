@@ -510,6 +510,78 @@ button.tile{cursor:pointer}
 .gm[data-th=liga]{--g-bg:repeating-linear-gradient(90deg,#0B3D2E 0 60px,#0E4535 60px 120px);--g-ink:#F2F7F0;--g-panel:#0F1E28;--g-pink:#F2F7F0;--g-bd:1px solid #C6FF3D59;--g-r:10px;--g-sh:0 8px 24px #00000059;--g-acc:#C6FF3D;--g-acc-ink:#0B1A10;--g-chip:#18303D;--g-chip-ink:#F2F7F0;--g-ok:#C6FF3D;--g-ok-ink:#0B1A10;--g-line:#3A5A66;--g-field:repeating-linear-gradient(0deg,#0E5A3F 0 40px,#0C5038 40px 80px);--g-back:#18303D;--g-star:#C6FF3D;--g-font:'Rajdhani',system-ui,sans-serif;--g-head:'Rajdhani',system-ui,sans-serif;--g-ls:.04em}
 .gm[data-th=liga] .gm-tt b,.gm[data-th=liga] .gm-h,.gm[data-th=liga] .gm-btn,.gm[data-th=liga] .gm-hud{text-transform:uppercase;font-weight:700}
 .gm[data-th=liga]{font-weight:600}
+/* peças de cada mecânica */
+.gm-tower{display:flex;flex-direction:column;gap:3px}
+.gm-blk{border:3px solid #2B2B2B;padding:7px 10px;font-size:14px;color:#1E1E1E;box-shadow:inset -3px -3px 0 rgba(0,0,0,.22),inset 3px 3px 0 rgba(255,255,255,.4);animation:gmDrop .3s}
+.gm-blk b{font-family:var(--g-head);font-size:10px;margin-right:4px}
+@keyframes gmDrop{from{transform:translateY(-24px);opacity:0}}
+.gm-ground{height:16px;background:repeating-linear-gradient(90deg,#5DB547 0 16px,#4E9A3C 16px 32px);border:3px solid #2B2B2B}
+.gm-tiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(132px,1fr))}
+.gm-tile{min-height:78px;font:inherit;font-size:14px;line-height:1.2;border:var(--g-bd);border-radius:var(--g-r);background:#9E9E9E;color:#111;cursor:pointer;box-shadow:var(--g-sh);display:grid;place-items:center;gap:2px;padding:8px;text-align:center;overflow-wrap:anywhere}
+.gm-tile .e{font-size:22px}
+.gm-tile.ok{background:#4DD0E1}
+.gm-tile.lava{background:#E65100;color:#fff}
+.gm-river{display:flex;gap:4px;align-items:center;padding:12px 8px;background:linear-gradient(#4FC3F7,#0277BD);border:var(--g-bd);border-radius:var(--g-r)}
+.gm-plank{flex:1;height:20px;border:2px dashed rgba(255,255,255,.75)}
+.gm-plank.on{background:#8B5A2B;border:3px solid #3E2512;animation:gmDrop .3s}
+.gm-walker{font-size:28px;line-height:1}
+.gm-keys.craft .gm-key{background:#E8D3A6;color:#2B1B0A;min-height:52px;font-size:18px}
+.gm-track{position:relative;height:44px;border-radius:999px;background:repeating-linear-gradient(90deg,var(--g-chip) 0 22px,#fff 22px 44px);border:var(--g-bd)}
+.gm-runner{position:absolute;top:3px;font-size:28px;transition:left .35s cubic-bezier(.3,1.6,.6,1)}
+.gm-flag{position:absolute;right:8px;top:6px;font-size:24px}
+.gm-plats{display:flex;flex-wrap:wrap;gap:10px}
+.gm-plats.spin .gm-plat{animation:gmWob .5s}
+@keyframes gmWob{30%{rotate:-6deg}70%{rotate:6deg}}
+.gm-plat{border-radius:999px;border-bottom-width:6px}
+.gm-field.sky{background:linear-gradient(#BDE9FF,#FFE4F2)}
+.gm-tok.bal{border-radius:40px 40px 40px 40px/48px 48px 36px 36px;background:#FF5FA2;color:#fff;border-color:#2B1B5C}
+.gm-tok .e{font-size:18px}
+.gm-field.belt{height:120px;background:repeating-linear-gradient(90deg,#5B4B8A 0 30px,#4A3D73 30px 60px)}
+.gm-tok.beltw{top:34px;left:0;transform:translateX(900px);white-space:nowrap;max-width:none}
+.gm-wheel{width:118px;height:118px;border-radius:50%;margin:4px auto;display:grid;place-items:center;font-family:var(--g-head);font-size:50px;font-weight:700;background:conic-gradient(#FF5FA2 0 25%,#FFD23F 0 50%,#3DDC97 0 75%,#7B5CFF 0);border:var(--g-bd);color:#fff;text-shadow:0 3px 0 #2B1B5C;animation:gmSpin .5s}
+@keyframes gmSpin{from{transform:rotate(-270deg) scale(.6)}}
+.gm-crit{font-size:84px;text-align:center;line-height:1.05;animation:gmPopIn .45s}
+.gm-crit.sm{font-size:52px}
+@keyframes gmPopIn{from{transform:scale(.3);opacity:.3}}
+.gm-card1{display:grid;gap:10px;padding:14px;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);box-shadow:var(--g-sh)}
+.gm-bar{height:10px;border-radius:999px;background:var(--g-line);overflow:hidden}
+.gm-bar i{display:block;height:100%;width:100%;background:var(--g-acc)}
+.gm-bar.me i{background:#3CD070}
+.gm-bar.foe i{background:#E3350D;transition:width .4s}
+.gm-arena{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center;align-items:end}
+.gm-arena small{font-size:12px;opacity:.8}
+.gm-opts.three{grid-template-columns:repeat(3,1fr)}
+.gm-opts.three .gm-btn{font-size:26px}
+.gm-holes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gm-hole{min-height:88px;border-radius:50%/42%;background:rgba(10,15,42,.55);border:3px solid #0A0F2A;display:grid;place-items:center;font:inherit;font-size:13px;line-height:1.15;padding:6px;text-align:center;color:#0A0F2A;overflow-wrap:anywhere}
+.gm-hole.up{background:#FFC800;cursor:pointer;animation:gmPopIn .2s;box-shadow:0 4px 0 #0A0F2A}
+.gm-duel{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gm-dcard{min-height:130px;font:inherit;font-family:var(--g-head);font-size:19px;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);box-shadow:var(--g-sh);cursor:pointer;display:grid;place-items:center;gap:4px;padding:10px;overflow-wrap:anywhere}
+.gm-dcard span{font-size:30px}
+.gm-wordle{display:grid;gap:5px;justify-content:center}
+.gm-wrow{display:grid;grid-auto-flow:column;gap:5px}
+.gm-wc{width:clamp(30px,10vw,44px);height:clamp(30px,10vw,44px);border:2px solid var(--g-line);display:grid;place-items:center;font-family:var(--g-head);font-size:20px;border-radius:6px}
+.gm-wc.g,.gm-key.g{background:#3CD070;color:#06210F}
+.gm-wc.y,.gm-key.y{background:#FFC800;color:#1A1200}
+.gm-wc.x,.gm-key.x{background:#0A0F2A;color:#9FB2FF}
+.gm-key.wide{grid-column:span 2}
+.gm-key.go{background:var(--g-acc);color:var(--g-acc-ink)}
+.gm-map,.gm-pitch{position:relative;height:min(58vh,440px);border:var(--g-bd);border-radius:var(--g-r);background:var(--g-field);overflow:hidden;color:var(--g-acc)}
+.gm-map{background:radial-gradient(circle at 50% 50%,transparent 0 42%,rgba(255,45,45,.18) 43%),var(--g-field)}
+.gm-map svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.gm-pt{position:absolute;transform:translate(-50%,-50%);max-width:42%;font:inherit;font-size:12.5px;line-height:1.15;border:var(--g-bd);border-radius:var(--g-r);background:var(--g-chip);color:var(--g-chip-ink);padding:6px 8px;cursor:pointer;text-align:center;overflow-wrap:anywhere;z-index:1}
+.gm-pt.ok{background:var(--g-ok);color:var(--g-ok-ink)}
+.gm-pt b{font-size:11px}
+.gm-pitch{background:linear-gradient(transparent 49.6%,rgba(255,255,255,.35) 49.6% 50.4%,transparent 50.4%),radial-gradient(circle at 50% 50%,transparent 0 13%,rgba(255,255,255,.35) 13% 13.7%,transparent 13.8%),var(--g-field)}
+.gm-pt.ply{border-radius:999px}
+.gm-ball{position:absolute;transform:translate(-50%,-150%);font-size:22px;transition:left .35s,top .35s;z-index:2}
+.gm-radio{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;line-height:1.5;min-height:4.5em;padding:10px 12px;border:1px dashed var(--g-line);border-radius:var(--g-r);background:#0B0F13;color:#7CFFB2}
+.gm-dials{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.gm-dial{width:48px;min-height:76px;display:grid;place-items:center;font:inherit;font-family:var(--g-head);font-size:26px;border:var(--g-bd);border-radius:8px;background:linear-gradient(#3A4550,#1A2128 50%,#3A4550);color:#FFB020;cursor:pointer}
+.gm-dial small{font-size:10px;opacity:.6}
+.gm-chip.on{background:var(--g-acc);color:var(--g-acc-ink)}
+.gm-chip.no{background:#7A1F1F;color:#fff;opacity:.6;text-decoration:line-through}
+.gm-skel{font-family:var(--g-head);font-size:30px;letter-spacing:.32em;text-align:center;overflow-wrap:anywhere}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -2046,30 +2118,24 @@ function modeNote(){
 }
 
 /* =========================================================
-   MINIJOGOS — cada requisito vira um jogo, com a cara da idade
-   (estilos inspirados nos jogos mais jogados em cada faixa)
+   MINIJOGOS — cada cartão tem o seu estilo e os seus próprios jogos
+   (Amigo = 10 anos … Guia = 15 anos; inspirados nos jogos mais jogados em cada idade)
    ========================================================= */
+const GM_CLASS_AGE={amigo:10,companheiro:11,pesquisador:12,pioneiro:13,excursionista:14,guia:15};
 const GM_THEMES={
- 10:{id:'blocos',name:'Mundo de Blocos',inspo:'Minecraft e Roblox',icon:'⛏️',life:'❤️',lifeName:'corações',back:'🟫',emo:['💎','🟩','🪵','⭐','🧱','🍎'],win:'Construído!',lose:'Ops, o bloco quebrou!',pts:'blocos',wave:'square',
-   n:4,time:0,lives:5,speed:.55,hint:true,pairs:3,
-   say:{ordem:'Empilhe os blocos na ordem certa, do primeiro ao último.',caca:'Minere só os blocos certos que vão caindo. Cuidado com os falsos!',memoria:'Ache os pares de blocos iguais.',forca:'Descubra a palavra secreta, letra por letra, antes de acabarem os corações.',quiz:'Escolha o bloco que completa a frase do requisito.'}},
- 11:{id:'corrida',name:'Corrida Maluca',inspo:'Stumble Guys e Fall Guys',icon:'🏁',life:'🎈',lifeName:'balões',back:'❓',emo:['🎉','⭐','🍭','🏅','🎈','🍩'],win:'Classificado!',lose:'Caiu da plataforma!',pts:'pontos',wave:'triangle',
-   n:5,time:0,lives:4,speed:.7,hint:true,pairs:4,
-   say:{ordem:'Pule nas plataformas na ordem certa para chegar ao fim da pista!',caca:'Pegue os itens certos que caem na pista e desvie dos errados.',memoria:'Abra as portas e ache os pares iguais.',forca:'Adivinhe a palavra antes de estourar todos os balões.',quiz:'Escolha a porta certa para completar a frase.'}},
- 12:{id:'criaturas',name:'Treinador de Criaturas',inspo:'Pokémon',icon:'🔴',life:'🔴',lifeName:'cápsulas',back:'⚪',emo:['🐉','🦊','🐢','🦉','🐸','🦋'],win:'Criatura capturada!',lose:'A criatura fugiu!',pts:'XP de treinador',wave:'square',
-   n:5,time:90,lives:4,speed:.85,hint:false,pairs:4,
-   say:{ordem:'Organize sua equipe na ordem certa para a batalha.',caca:'Capture só as criaturas certas que aparecem!',memoria:'Encontre as cartas iguais para completar a coleção.',forca:'Descubra o nome secreto, letra por letra.',quiz:'Escolha o golpe certo para completar a frase.'}},
- 13:{id:'brawl',name:'Arena Brawl',inspo:'Brawl Stars e Clash Royale',icon:'🏆',life:'🛡️',lifeName:'escudos',back:'💥',emo:['🏆','💥','⚡','👑','💣','🔥'],win:'Vitória!',lose:'Derrota… bora revanche?',pts:'troféus',wave:'sawtooth',
-   n:6,time:75,lives:3,speed:1,hint:false,pairs:5,
-   say:{ordem:'Monte o combo na ordem certa!',caca:'Acerte só os alvos certos. Errar custa escudo!',memoria:'Ache os pares e ganhe troféus.',forca:'Descubra a palavra antes de perder os escudos.',quiz:'Escolha a carta certa para completar a frase.'}},
- 14:{id:'zona',name:'Zona de Sobrevivência',inspo:'Free Fire e battle royale',icon:'🎯',life:'🩹',lifeName:'kits médicos',back:'📦',emo:['🎯','🪂','🔥','🛡️','📦','🧭'],win:'Último de pé!',lose:'Eliminado pela zona',pts:'pontos de sobrevivência',wave:'sawtooth',
-   n:7,time:60,lives:3,speed:1.2,hint:false,pairs:6,
-   say:{ordem:'Pouse nos pontos na ordem certa antes que a zona feche.',caca:'Colete só os suprimentos certos que caem do avião.',memoria:'Abra as caixas e ache os pares antes da zona fechar.',forca:'Decifre o código antes de ficar sem kits médicos.',quiz:'Escolha a rota certa para completar a frase.'}},
- 15:{id:'liga',name:'Liga Pro',inspo:'EA FC, futebol e esports',icon:'⚽',life:'🔋',lifeName:'energia',back:'⚽',emo:['⚽','🥅','🏆','🔥','🎯','⭐'],win:'GG! Vitória na Liga',lose:'Fim de jogo',pts:'pontos de ranking',wave:'sine',
-   n:8,time:50,lives:2,speed:1.4,hint:false,pairs:6,
-   say:{ordem:'Monte a jogada na ordem certa, passe por passe.',caca:'Intercepte só as bolas certas. Errar dá cartão!',memoria:'Ache os pares e suba no ranking.',forca:'Descubra a palavra antes de acabar a energia.',quiz:'Escolha a jogada certa para completar a frase.'}}
+ 10:{id:'blocos',name:'Mundo de Blocos',inspo:'Minecraft e Roblox',icon:'⛏️',life:'❤️',lifeName:'corações',emo:['💎','🟩','🪵','⭐','🧱','🍎'],win:'Construído!',lose:'Ops, o bloco quebrou!',pts:'blocos',wave:'square',
+   n:5,time:0,lives:5,speed:.55,rounds:3,mech:{seq:'torre',set:'mina',choice:'ponte',letters:'craft'}},
+ 11:{id:'corrida',name:'Corrida Maluca',inspo:'Stumble Guys e Fall Guys',icon:'🏁',life:'🎈',lifeName:'balões',emo:['🎉','⭐','🍭','🏅','🎈','🍩'],win:'Classificado!',lose:'Caiu da plataforma!',pts:'pontos',wave:'triangle',
+   n:5,time:0,lives:4,speed:.7,rounds:3,mech:{seq:'plataformas',set:'baloes',choice:'esteira',letters:'roleta'}},
+ 12:{id:'criaturas',name:'Treinador de Criaturas',inspo:'Pokémon',icon:'🔴',life:'🔴',lifeName:'cápsulas',emo:['🐉','🦊','🐢','🦉','🐸','🦋'],win:'Criatura capturada!',lose:'A criatura fugiu!',pts:'XP de treinador',wave:'square',
+   n:6,time:120,lives:4,speed:.85,rounds:3,mech:{seq:'evolucao',set:'captura',choice:'batalha',letters:'pegadas'}},
+ 13:{id:'brawl',name:'Arena Brawl',inspo:'Brawl Stars e Clash Royale',icon:'🏆',life:'🛡️',lifeName:'escudos',emo:['🏆','💥','⚡','👑','💣','🔥'],win:'Vitória!',lose:'Derrota… bora revanche?',pts:'troféus',wave:'sawtooth',
+   n:6,time:90,lives:3,speed:1,rounds:4,mech:{seq:'combo',set:'alvo',choice:'duelo',letters:'codigo'}},
+ 14:{id:'zona',name:'Zona de Sobrevivência',inspo:'Free Fire e battle royale',icon:'🎯',life:'🩹',lifeName:'kits médicos',emo:['🎯','🪂','🔥','🛡️','📦','🧭'],win:'Último de pé!',lose:'Eliminado pela zona',pts:'pontos de sobrevivência',wave:'sawtooth',
+   n:7,time:75,lives:3,speed:1.2,rounds:4,mech:{seq:'rota',set:'airdrop',choice:'radio',letters:'cofre'}},
+ 15:{id:'liga',name:'Liga Pro',inspo:'EA FC, futebol e esports',icon:'⚽',life:'🔋',lifeName:'energia',emo:['⚽','🥅','🏆','🔥','🎯','⭐'],win:'GG! Vitória na Liga',lose:'Fim de jogo',pts:'pontos de ranking',wave:'sine',
+   n:8,time:60,lives:3,speed:1.4,rounds:5,mech:{seq:'jogada',set:'escalacao',choice:'contra',letters:'semvogais'}}
 };
-const GM_MODES={ordem:'Ordem certa',caca:'Pega-pega',memoria:'Memória',forca:'Palavra secreta',quiz:'Complete a frase'};
 const GM_FONTS='https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Fredoka:wght@500;700&family=Lilita+One&family=Oxanium:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@600;700&display=swap';
 const BIBLE_AT=['Gênesis','Êxodo','Levítico','Números','Deuteronômio','Josué','Juízes','Rute','1 Samuel','2 Samuel','1 Reis','2 Reis','1 Crônicas','2 Crônicas','Esdras','Neemias','Ester','Jó','Salmos','Provérbios','Eclesiastes','Cantares','Isaías','Jeremias','Lamentações','Ezequiel','Daniel','Oseias','Joel','Amós','Obadias','Jonas','Miqueias','Naum','Habacuque','Sofonias','Ageu','Zacarias','Malaquias'];
 const BIBLE_NT=['Mateus','Marcos','Lucas','João','Atos','Romanos','1 Coríntios','2 Coríntios','Gálatas','Efésios','Filipenses','Colossenses','1 Tessalonicenses','2 Tessalonicenses','1 Timóteo','2 Timóteo','Tito','Filemom','Hebreus','Tiago','1 Pedro','2 Pedro','1 João','2 João','3 João','Judas','Apocalipse'];
@@ -2111,219 +2177,413 @@ function planBooks(it){
   String(it.i).split('·').forEach(seg=>{ seg=seg.trim(); const k=keys.find(a=>seg===a||seg.indexOf(a+' ')===0); if(k) got[BOOK_ABBR[k]]=1; });
   return BIBLE.filter(b=>got[b]);
 }
-/* especialidade do caderno: um jogo com todos os requisitos dela */
+/* ---------- conteúdo de cada requisito ----------
+   seq = sequência para pôr em ordem · set = certos no meio de errados
+   choice = frase com uma palavra faltando · letters = uma palavra para descobrir */
 const gmShort=s=>s.length>72?s.slice(0,70).replace(/\s+\S*$/,'')+'…':s;
 const gmEspItem=id=>{ const e=ESPI[id]; return e?{key:'esp:'+id,t:'Especialidade de '+e.n,esp:e}:null; };
-function gmEspChallenges(e){
-  const R=e.r, out=[], mine=new Set(R.map(normTxt)), bad=[];
+const GM_TXT_TITLE={choice:'Complete o requisito',letters:'A palavra secreta do requisito',seq:'Monte a frase do requisito',set:'As palavras-chave do requisito'};
+const gmCardWords=(texts,exclude)=>{ const ex=new Set(exclude.map(normTxt)), out=[], seen={}; texts.forEach(t=>gmWords(t).forEach(w=>{ const n=normTxt(w); if(!ex.has(n)&&!seen[n]){ seen[n]=1; out.push(w); } })); return out; };
+/* texto do requisito vira um jogo; o tipo gira pela posição no cartão, para vizinhos não repetirem */
+function gmTextContent(id,sents,others,rot){
+  const words=gmWords(sents.join(' ')), toks=sents[0].split(/\s+/).filter(Boolean);
+  const bad=gmCardWords(others,words), ok={choice:words.length>=1,letters:words.some(w=>normTxt(w).length>=4),seq:toks.length>=4,set:words.length>=2&&bad.length>=3};
+  const order=['choice','letters','seq','set']; let shape='choice';
+  for(let k=0;k<4;k++){ const s=order[(rot+k)%4]; if(ok[s]){ shape=s; break; } }
+  const c={id:id,shape:shape,title:GM_TXT_TITLE[shape],sents:sents,words:words.length?words:['Desbravador'],others:others};
+  if(shape==='seq'){ c.items=toks.slice(0,9); c.plain=true; c.full=true; }
+  if(shape==='set'){ c.items=words; c.bad=bad; }
+  return c;
+}
+function gmEspContents(e){
+  const R=e.r, mine=new Set(R.map(normTxt)), bad=[], others=gmPick(ESP.filter(x=>x.id!==e.id),8).reduce((a,x)=>a.concat(x.r),[]);
   ESP.forEach(x=>{ if(x.id!==e.id) x.r.forEach(r=>{ if(!mine.has(normTxt(r))) bad.push(gmShort(r)); }); });
-  if(R.length>=3) out.push({id:'ordem',mode:'ordem',title:'Os requisitos de '+e.n+', do primeiro ao último',items:R.map(gmShort),label:'Req.'});
-  out.push({id:'caca',mode:'caca',title:'Requisitos de '+e.n,items:R.map(gmShort),bad:bad});
-  const sents=R.filter(r=>gmWords(r).length);
-  if(sents.length){ out.push({id:'forca',mode:'forca',title:'uma palavra dos requisitos',sents:sents});
-    out.push({id:'quiz',mode:'quiz',title:'o texto dos requisitos',sents:sents}); }
-  out.push({id:'area',mode:'quiz',kind:'area',modeName:'Qual é a área?',say:'Diga em qual área do caderno fica cada especialidade.',title:'as áreas do caderno'});
+  const out=[], rot=ESP.indexOf(e), sents=R.filter(r=>gmWords(r).length);
+  if(sents.length){ const t=gmTextContent('texto',sents,others,rot%2); out.push(t.shape==='choice'||t.shape==='letters'?t:Object.assign(t,gmTextContent('texto',sents,others,0))); }
+  if(R.length>=3) out.push({id:'ordem',shape:'seq',title:'Os requisitos de '+e.n+', em ordem',items:R.map(gmShort),label:'Req.'});
+  out.push({id:'caca',shape:'set',title:'Os requisitos de '+e.n,items:R.map(gmShort),bad:bad});
+  out.push({id:'area',shape:'choice',kind:'area',title:'Qual é a área de cada especialidade?'});
   return out;
 }
-/* os desafios de um requisito: conteúdo dele vira o jogo */
-function gmChallenges(it){
-  if(it.esp) return gmEspChallenges(it.esp);
-  const out=[], nt=normTxt(it.t), P=gmPools();
-  const add=(id,c)=>{ if(!out.some(x=>x.id===id)) out.push(Object.assign({id:id},c)); };
-  const bank=id=>{ const b=GM_BANK[id]; add(id,{mode:b.mode==='frase'?'ordem':b.mode,title:b.t,items:b.mode==='frase'?(Array.isArray(b.items)?b.items:b.items.split(' ')):b.items,bad:b.bad,label:b.label,plain:b.plain||b.mode==='frase',full:b.mode==='frase'}); };
+function gmContents(it){
+  if(it.esp) return gmEspContents(it.esp);
+  const out=[], nt=normTxt(it.t), P=gmPools(), card=LIST[it.cls].reg.concat(LIST[it.cls].av), others=card.filter(x=>x!==it);
+  const add=c=>{ if(!out.some(x=>x.id===c.id)) out.push(c); };
+  const bank=id=>{ const b=GM_BANK[id], fr=b.mode==='frase'; add({id:id,shape:b.mode==='caca'?'set':'seq',title:b.t,items:fr?(Array.isArray(b.items)?b.items:b.items.split(' ')):b.items,bad:b.bad,label:b.label,plain:fr,full:fr}); };
   if(/voto e a lei/.test(nt)){ bank('voto'); bank('lei'); }
   else if(/lei do desbravador/.test(nt)) bank('lei');
   else if(/voto do desbravador/.test(nt)) bank('voto');
   if(/alvo e o lema/.test(nt)){ bank('alvo'); bank('lema'); }
   if(/objetivo ja/.test(nt)) bank('objetivo');
   (it.a||[]).forEach(s=>{ const n=normTxt(s); GM_MATCH.forEach(m=>{ if(m[0].test(n)) bank(m[1]); }); });
-  if(it.i){ let bs=planBooks(it); if(bs.length<4){ const s=Math.max(0,BIBLE.indexOf(bs[0]||'Gênesis')); bs=BIBLE.slice(s,s+8); } add('leitura',{mode:'ordem',title:'Livros do seu plano de leitura, na ordem da Bíblia',items:bs,plain:true}); }
+  if(it.i){ let bs=planBooks(it); if(bs.length<4){ const s=Math.max(0,BIBLE.indexOf(bs[0]||'Gênesis')); bs=BIBLE.slice(s,s+8); } add({id:'leitura',shape:'seq',title:'Livros do seu plano de leitura, na ordem da Bíblia',items:bs,plain:true}); }
+  const fromCard=(key,list)=>{ const mine=new Set(list.map(normTxt)), b=[]; others.forEach(x=>(x[key]||[]).forEach(v=>{ if(!mine.has(normTxt(v))&&b.indexOf(v)<0) b.push(v); })); return b; };
   if(it.o&&it.o.length>=2){ const esp=it.o.filter(o=>ESP_BY_NAME[normTxt(o)]);
-    if(esp.length>=2) add('opcoes',{mode:'caca',title:'Especialidades que valem para este requisito',items:esp,bad:P.esp.filter(n=>esp.indexOf(n)<0)});
-    else add('opcoes',{mode:'memoria',title:'As opções deste requisito',items:it.o}); }
+    if(esp.length>=2) add({id:'opcoes',shape:'set',title:'Especialidades que valem para este requisito',items:esp,bad:P.esp.filter(n=>esp.indexOf(n)<0)});
+    else { const b=fromCard('o',it.o); add({id:'opcoes',shape:'set',title:'As opções deste requisito',items:it.o,bad:b.length>=3?b:gmCardWords(others.map(x=>x.t),it.o)}); } }
   if(it.a&&!out.length){ const vs=it.a.filter(isVerse);
-    if(vs.length>=2) add('versos',{mode:'caca',title:'Os versos do seu cartão',items:vs,bad:P.verses.filter(v=>vs.indexOf(v)<0)});
-    else add('itens',{mode:'memoria',title:'Os itens deste requisito',items:it.a}); }
-  const words=gmWords(it.t), quiz=words.length>=2&&gmHash(it.key)%2===0;
-  if(words.length) add('texto',{mode:quiz?'quiz':'forca',title:quiz?'o texto do requisito':'uma palavra do requisito',words:words});
-  if(!out.length) add('texto',{mode:'forca',title:'Palavra secreta',words:['Desbravador']});
+    if(vs.length>=2) add({id:'versos',shape:'set',title:'Os versos do seu cartão',items:vs,bad:P.verses.filter(v=>vs.indexOf(v)<0)});
+    else { const b=fromCard('a',it.a); add({id:'itens',shape:'set',title:'Os itens deste requisito',items:it.a,bad:b.length>=3?b:gmCardWords(others.map(x=>x.t),it.a)}); } }
+  add(gmTextContent('texto',[it.t],others.map(x=>x.t),card.indexOf(it)));
   return out;
 }
-const gmAge=t=>{ const a=ageOf(t.birth); return Math.max(10,Math.min(15,a!=null?a:CLS[memberClass(t)].age)); };
+
+/* ---------- as 24 mecânicas: 4 de cada cartão, nenhuma repetida ----------
+   cada uma: name, say, init(g,G,th,c), html(g,G,th,c), tap(g,G,b), loop?(g,G,dt,th), prog?(G) */
+const gmEsc=esc;
+const gmMask=(s,w,rep)=>gmEsc(s).replace(gmEsc(w),rep);
+const gmLetters=w=>normTxt(w).toUpperCase().replace(/[^A-Z]/g,'');
+const gmAZ='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const gmNext3=G=>gmShuffle([G.done].concat(gmPick(G.seq.map((_,i)=>i).filter(i=>i>G.done),2)));
+const gmSeqLabel=(c,G,i)=>(c.label?gmEsc(c.label)+' ':'')+(G.base+i+1);
+const gmChoiceBtns=(r,cls)=>r.opts.map(o=>'<button class="gm-chip '+(cls||'')+'" data-g="m" data-ok="'+(o===r.w?1:0)+'">'+gmEsc(o)+'</button>').join('');
+const gmSent=r=>r.q||gmMask(r.s,r.w,'<u>&nbsp;</u>');
+function gmTokens(g,G,dt,th,o){
+  const f=g.root&&g.root.querySelector('.gm-field'); if(!f) return; const H=f.clientHeight;
+  G.spawnIn=(G.spawnIn==null?250:G.spawnIn)-dt;
+  if(G.spawnIn<=0){ G.spawnIn=o.every/th.speed;
+    const on=G.tokens.map(k=>k.txt), cand=G.good.filter(x=>!G.caught[x]&&on.indexOf(x)<0), bad=G.bad.filter(x=>on.indexOf(x)<0);
+    const ok=cand.length&&(!bad.length||Math.random()<.55), txt=ok?gmPick(cand,1)[0]:gmPick(bad,1)[0];
+    if(txt){ const el=document.createElement('button'); el.className='gm-tok '+(o.cls||''); el.dataset.g='m'; el.dataset.ok=ok?'1':'0';
+      el.innerHTML=(o.emoji?'<span class="e" aria-hidden="true">'+o.emoji+'</span> ':'')+gmEsc(txt); el.style.left=(3+Math.random()*52)+'%'; f.appendChild(el);
+      G.tokens.push({txt:txt,ok:!!ok,y:o.dir>0?-70:H+10,el:el,ph:Math.random()*6}); } }
+  const v=.06*th.speed*Math.max(1,H/360);
+  G.tokens.forEach(k=>{ k.y+=dt*v*o.dir; k.ph+=dt/380; const x=o.wob?Math.sin(k.ph)*o.wob:0; k.el.style.transform='translate('+x.toFixed(1)+'px,'+k.y.toFixed(1)+'px)'; if(k.y>H+30||k.y<-90){ k.gone=1; k.el.remove(); } });
+  G.tokens=G.tokens.filter(k=>!k.gone);
+}
+function gmTokTap(g,G,b,pop){ const k=G.tokens.find(x=>x.el===b); if(!k) return;
+  if(k.ok){ k.gone=1; b.remove(); G.tokens=G.tokens.filter(x=>x!==k); G.caught[k.txt]=1; G.got++; g.ok(100); if(G.got>=G.target) g.win(); }
+  else { b.disabled=true; b.style.opacity='.35'; g.miss(b); } }
+const GM_MECH={
+/* ===== AMIGO · 10 anos · Mundo de Blocos ===== */
+ torre:{name:'Torre de Blocos',say:'Construa a torre! Escolha qual bloco vem agora e empilhe tudo na ordem certa.',
+  init(g,G){ G.opts=gmNext3(G); },
+  html(g,G,th,c){ const pal=['#7CB342','#A1887F','#90A4AE','#FFCA28','#4FC3F7','#E57373','#BA68C8','#4DB6AC','#FFB74D','#AED581'];
+    return '<div class="gm-tower">'+G.seq.slice(0,G.done).map((x,i)=>'<div class="gm-blk" style="background:'+pal[i%pal.length]+'"><b>'+gmSeqLabel(c,G,i)+'</b> '+gmEsc(x)+'</div>').reverse().join('')+'<div class="gm-ground" aria-hidden="true"></div></div>'+
+     '<p class="gm-kick">Qual bloco vem agora? ('+gmSeqLabel(c,G,G.done)+')</p><div class="gm-opts">'+G.opts.map(i=>'<button class="gm-chip" data-g="m" data-i="'+i+'">🧱 '+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ if(+b.dataset.i===G.done){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.opts=gmNext3(G); g.board(); } else g.miss(b); },
+  prog:G=>G.done+'/'+G.seq.length},
+ mina:{name:'Mineração',say:'Pegue a picareta! Minere só os blocos certos. Bloco errado é lava!',
+  init(g,G){ const good=gmPick(G.good,G.target), bad=gmPick(G.bad,Math.max(3,G.target)); G.tiles=gmShuffle(good.map(t=>({t:t,ok:1})).concat(bad.map(t=>({t:t,ok:0})))); },
+  html(g,G,th,c){ return '<p class="gm-note">Ache os '+G.target+' certos · '+gmEsc(c.title)+'</p><div class="gm-tiles">'+G.tiles.map((x,i)=>'<button class="gm-tile'+(x.x==='ok'?' ok':x.x==='bad'?' lava':'')+'" data-g="m" data-ok="'+x.ok+'" data-i="'+i+'"'+(x.x?' disabled':'')+'><span class="e" aria-hidden="true">'+(x.x==='ok'?'💎':x.x==='bad'?'🔥':'🪨')+'</span>'+gmEsc(x.t)+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ const x=G.tiles[+b.dataset.i]; if(x.x) return; if(x.ok){ x.x='ok'; G.got++; g.ok(100); if(G.got>=G.target) return g.win(); g.board(); } else { x.x='bad'; g.board(); g.miss(); } },
+  prog:G=>G.got+'/'+G.target},
+ ponte:{name:'Ponte de Tábuas',say:'Atravesse o rio! Cada palavra certa vira uma tábua da ponte.',opts:3,
+  init(){},
+  html(g,G){ const r=G.rounds[G.q]; return '<div class="gm-river" aria-hidden="true"><span class="gm-walker">🧍</span>'+G.rounds.map((_,i)=>'<span class="gm-plank'+(i<G.q?' on':'')+'"></span>').join('')+'<span class="gm-walker">🏠</span></div>'+
+    '<p class="gm-sent">'+gmSent(r)+'</p><div class="gm-opts">'+gmChoiceBtns(r)+'</div>'; },
+  tap(g,G,b){ if(b.dataset.ok==='1'){ G.q++; g.ok(120); if(G.q>=G.rounds.length) return g.win(); g.board(); } else g.miss(b); },
+  prog:G=>G.q+'/'+G.rounds.length},
+ craft:{name:'Mesa de Criação',say:'Crie a palavra! Toque nas letras na ordem certa para montar o item na mesa.',len:[4,9],
+  init(g,G){ G.L=gmLetters(G.word); G.pos=1; const p=G.L.split('').map((ch,i)=>({ch:ch,i:i})); G.pool=gmShuffle(p.slice(1)); },
+  html(g,G){ return '<p class="gm-sent">'+gmMask(G.sent,G.word,'<u>?</u>')+'</p><div class="gm-word" aria-label="Palavra">'+G.L.split('').map((ch,i)=>'<span>'+(i<G.pos?ch:'')+'</span>').join('')+'</div>'+
+    '<div class="gm-keys craft">'+G.pool.map((x,i)=>'<button class="gm-key" data-g="m" data-i="'+i+'"'+(x.used?' disabled':'')+'>'+(x.used?'':x.ch)+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ const x=G.pool[+b.dataset.i]; if(x.used) return; if(x.ch===G.L[G.pos]){ x.used=1; G.pos++; g.ok(40); if(G.pos>=G.L.length) return g.win(); g.board(); } else g.miss(b); },
+  prog:G=>G.pos+'/'+G.L.length},
+/* ===== COMPANHEIRO · 11 anos · Corrida Maluca ===== */
+ plataformas:{name:'Plataformas Malucas',say:'Pule nas plataformas na ordem certa! Cuidado: a pista gira de tempos em tempos.',
+  init(g,G){ G.order=gmShuffle(G.seq.map((_,i)=>i)); G.tShuf=0; },
+  loop(g,G,dt,th){ G.tShuf+=dt; if(G.tShuf>5200/th.speed){ G.tShuf=0; G.order=gmShuffle(G.order); G.spin=true; g.board(); } },
+  html(g,G,th,c){ const pct=Math.round(G.done/G.seq.length*100);
+    return '<div class="gm-track" aria-hidden="true"><span class="gm-runner" style="left:calc('+pct+'% - '+(pct/100*34)+'px)">🏃</span><span class="gm-flag">🏁</span></div>'+
+     '<p class="gm-kick">Próxima plataforma: '+gmSeqLabel(c,G,G.done)+(G.spin?' · a pista girou!':'')+'</p><div class="gm-plats'+(G.spin?' spin':'')+'">'+G.order.filter(i=>i>=G.done).map(i=>'<button class="gm-chip gm-plat" data-g="m" data-i="'+i+'">'+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ G.spin=false; if(+b.dataset.i===G.done){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.order=gmShuffle(G.order); G.tShuf=0; g.board(); } else g.miss(b); },
+  prog:G=>G.done+'/'+G.seq.length},
+ baloes:{name:'Estoura-Balões',say:'Os balões estão subindo! Estoure só os certos antes que eles fujam.',
+  init(g,G){ G.tokens=[]; G.spawnIn=null; },
+  html(g,G,th,c){ return '<p class="gm-note">Estoure '+G.target+' · '+gmEsc(c.title)+'</p><div class="gm-field sky" aria-label="Campo de balões"></div>'; },
+  loop(g,G,dt,th){ gmTokens(g,G,dt,th,{dir:-1,every:1250,cls:'bal',emoji:'🎈',wob:14}); },
+  tap(g,G,b){ gmTokTap(g,G,b); },
+  prog:G=>G.got+'/'+G.target},
+ esteira:{name:'Esteira Maluca',say:'As palavras passam na esteira! Toque na que completa a frase antes que ela vá embora.',opts:4,
+  init(g,G){ G.beltX=null; },
+  html(g,G){ const r=G.rounds[G.q]; G.beltX=null; return '<p class="gm-sent">'+gmSent(r)+'</p><div class="gm-field belt" aria-label="Esteira">'+r.opts.map((o,i)=>'<button class="gm-tok beltw" data-g="m" data-i="'+i+'" data-ok="'+(o===r.w?1:0)+'">'+gmEsc(o)+'</button>').join('')+'</div>'; },
+  loop(g,G,dt,th){ const f=g.root&&g.root.querySelector('.gm-field.belt'); if(!f) return; const els=[...f.querySelectorAll('.beltw')], W=f.clientWidth, gap=Math.max(170,W/2.4);
+    if(!G.beltX) G.beltX=els.map((_,i)=>W+i*gap);
+    const span=els.length*gap; G.beltX=G.beltX.map(x=>{ x-=dt*.07*th.speed*1.4; return x<-200?x+span+200:x; });
+    els.forEach((el,i)=>{ el.style.transform='translateX('+G.beltX[i].toFixed(1)+'px)'; }); },
+  tap(g,G,b){ if(b.dataset.ok==='1'){ G.q++; g.ok(120); if(G.q>=G.rounds.length) return g.win(); g.board(); } else { b.disabled=true; b.style.opacity='.35'; g.miss(b); } },
+  prog:G=>G.q+'/'+G.rounds.length},
+ roleta:{name:'Roleta da Sorte',say:'Gire a roleta! A letra sorteada está na palavra secreta? Responda rápido.',len:[5,12],
+  init(g,G){ G.L=gmLetters(G.word); G.rev={}; G.used={}; this.next(G); },
+  next(G){ const hidden=G.L.split('').filter(ch=>!G.rev[ch]), out=gmAZ.filter(ch=>G.L.indexOf(ch)<0&&!G.used[ch]);
+    G.cur=(hidden.length&&(Math.random()<.55||!out.length))?gmPick(hidden,1)[0]:gmPick(out,1)[0]; G.used[G.cur]=1; G.turn=(G.turn||0)+1; },
+  html(g,G){ return '<p class="gm-sent">'+gmMask(G.sent,G.word,'<u>?</u>')+'</p><div class="gm-word">'+G.L.split('').map(ch=>'<span>'+(G.rev[ch]?ch:'')+'</span>').join('')+'</div>'+
+    '<div class="gm-wheel" data-t="'+G.turn+'" aria-live="polite">'+G.cur+'</div><div class="gm-opts"><button class="gm-btn" data-g="m" data-k="sim">Tem na palavra!</button><button class="gm-btn alt" data-g="m" data-k="nao">Não tem</button></div>'; },
+  tap(g,G,b){ const has=G.L.indexOf(G.cur)>=0, yes=b.dataset.k==='sim';
+    if(has===yes){ if(has) G.rev[G.cur]=1; g.ok(has?60:30); if(G.L.split('').every(ch=>G.rev[ch])) return g.win(); this.next(G); g.board(); } else { if(has) G.rev[G.cur]=1; if(!g.miss()){ this.next(G); g.board(); } } },
+  prog:G=>G.L.split('').filter(ch=>G.rev[ch]).length+'/'+G.L.length},
+/* ===== PESQUISADOR · 12 anos · Treinador de Criaturas ===== */
+ evolucao:{name:'Evolução',say:'Faça sua criatura evoluir! A cada acerto ela muda de forma. Escolha o que vem depois.',
+  stages:['🥚','🐣','🐥','🐤','🦆','🦢','🦅','🐉','🐲','🌟'],
+  init(g,G){ G.opts=gmNext3(G); },
+  html(g,G,th,c){ const st=this.stages, e=st[Math.min(st.length-1,Math.floor(G.done/G.seq.length*(st.length-1)))];
+    return '<div class="gm-crit" data-t="'+G.done+'" aria-hidden="true">'+e+'</div><p class="gm-kick" style="text-align:center">Estágio '+(G.done+1)+' de '+G.seq.length+'</p>'+
+     (G.done?'<ol class="gm-recap" start="'+(G.base+1)+'">'+G.seq.slice(0,G.done).map(x=>'<li>'+gmEsc(x)+'</li>').join('')+'</ol>':'')+
+     '<p class="gm-kick">O que vem agora? ('+gmSeqLabel(c,G,G.done)+')</p><div class="gm-opts">'+G.opts.map(i=>'<button class="gm-chip" data-g="m" data-i="'+i+'">'+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ if(+b.dataset.i===G.done){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.opts=gmNext3(G); g.board(); } else g.miss(b); },
+  prog:G=>G.done+'/'+G.seq.length},
+ captura:{name:'Captura',say:'Uma criatura apareceu! Ela é deste requisito? Capture as certas e deixe as outras irem.',
+  init(g,G){ this.fill(G); this.next(G); },
+  fill(G){ const good=gmPick(G.good.filter(x=>!G.caught[x]),G.target+1), bad=gmPick(G.bad,G.target+1); G.queue=gmShuffle(good.map(t=>({t:t,ok:1})).concat(bad.map(t=>({t:t,ok:0})))); },
+  next(G){ if(!G.queue.length) this.fill(G); G.cur=G.queue.shift(); G.cardT=0; G.foe=gmPick(['🦊','🐢','🦉','🐸','🦋','🐉','🦎','🐿️'],1)[0]; },
+  loop(g,G,dt,th){ G.cardT+=dt; const lim=9000/th.speed, bar=g.root&&g.root.querySelector('.gm-bar i'); if(bar) bar.style.width=Math.max(0,100-G.cardT/lim*100)+'%'; if(G.cardT>=lim){ this.next(G); g.board(); } },
+  html(g,G){ return '<div class="gm-card1" data-ok="'+G.cur.ok+'"><div class="gm-crit sm" aria-hidden="true">'+G.foe+'</div><p class="gm-h" style="text-align:center">'+gmEsc(G.cur.t)+'</p><div class="gm-bar"><i></i></div></div>'+
+    '<div class="gm-opts"><button class="gm-btn" data-g="m" data-k="sim">🔴 Capturar</button><button class="gm-btn alt" data-g="m" data-k="nao">Deixar ir</button></div>'; },
+  tap(g,G,b){ const yes=b.dataset.k==='sim';
+    if(yes===!!G.cur.ok){ if(yes){ G.caught[G.cur.t]=1; G.got++; g.ok(100); if(G.got>=G.target) return g.win(); } else g.ok(30); this.next(G); g.board(); }
+    else if(!g.miss()){ this.next(G); g.board(); } },
+  prog:G=>G.got+'/'+G.target},
+ batalha:{name:'Batalha',say:'Batalha! Escolha o golpe certo (a palavra que falta) para derrubar a criatura selvagem.',opts:4,
+  init(g,G){ G.foe=gmPick(['🐉','🦖','🐊','🦂','🐍','🦇'],1)[0]; },
+  html(g,G,th){ const r=G.rounds[G.q], hp=Math.round((1-G.q/G.rounds.length)*100);
+    return '<div class="gm-arena"><div><div class="gm-crit sm" aria-hidden="true">🦊</div><div class="gm-bar me"><i style="width:'+Math.round(G.lives/th.lives*100)+'%"></i></div><small>Você</small></div><div><div class="gm-crit sm" data-t="'+G.q+'" aria-hidden="true">'+G.foe+'</div><div class="gm-bar foe"><i style="width:'+hp+'%"></i></div><small>Selvagem</small></div></div>'+
+     '<p class="gm-sent">'+gmSent(r)+'</p><div class="gm-opts">'+gmChoiceBtns(r)+'</div>'; },
+  tap(g,G,b){ if(b.dataset.ok==='1'){ G.q++; g.ok(130); if(G.q>=G.rounds.length) return g.win(); g.board(); } else if(!g.miss(b)) g.board(); },
+  prog:G=>G.q+'/'+G.rounds.length},
+ pegadas:{name:'Pegadas',say:'Siga as pegadas! Escolha, letra por letra, a pegada certa para descobrir a palavra.',len:[4,10],
+  init(g,G){ G.L=gmLetters(G.word); G.pos=0; this.opts(G); },
+  opts(G){ const ch=G.L[G.pos]; G.opts=gmShuffle([ch].concat(gmPick(gmAZ.filter(x=>x!==ch),2))); },
+  html(g,G){ return '<p class="gm-sent">'+gmMask(G.sent,G.word,'<u>?</u>')+'</p><div class="gm-word">'+G.L.split('').map((ch,i)=>'<span>'+(i<G.pos?ch:i===G.pos?'🐾':'')+'</span>').join('')+'</div>'+
+    '<div class="gm-opts three">'+G.opts.map(x=>'<button class="gm-btn alt" data-g="m" data-k="'+x+'">'+x+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ if(b.dataset.k===G.L[G.pos]){ G.pos++; g.ok(40); if(G.pos>=G.L.length) return g.win(); this.opts(G); g.board(); } else g.miss(b); },
+  prog:G=>G.pos+'/'+G.L.length},
+/* ===== PIONEIRO · 13 anos · Arena Brawl ===== */
+ combo:{name:'Combo de Memória',say:'Decore o combo! A sequência aparece por alguns segundos e depois some. Refaça de cabeça.',
+  init(g,G,th){ G.show=true; G.showT=1800+G.seq.length*900/th.speed; G.order=gmShuffle(G.seq.map((_,i)=>i)); },
+  loop(g,G,dt){ if(!G.show) return; G.showT-=dt; const t=g.root&&g.root.querySelector('.gm-count'); if(t) t.textContent=Math.ceil(G.showT/1000)+'s'; if(G.showT<=0){ G.show=false; g.board(); } },
+  html(g,G,th,c){ if(G.show) return '<p class="gm-kick">Decore! Some em <b class="gm-count"></b></p><ol class="gm-slots">'+G.seq.map((x,i)=>'<li class="gm-slot ok"><b>'+gmSeqLabel(c,G,i)+'</b><span>'+gmEsc(x)+'</span></li>').join('')+'</ol><div class="gm-row"><button class="gm-btn" data-g="m" data-k="pronto">Já decorei!</button></div>';
+    return '<ol class="gm-slots">'+G.seq.map((x,i)=>'<li class="gm-slot'+(i<G.done?' ok':'')+'"><b>'+gmSeqLabel(c,G,i)+'</b><span>'+(i<G.done?gmEsc(x):'')+'</span></li>').join('')+'</ol>'+
+     '<div class="gm-chips">'+G.order.filter(i=>i>=G.done).map(i=>'<button class="gm-chip" data-g="m" data-i="'+i+'">'+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ if(b.dataset.k==='pronto'){ G.show=false; return g.board(); } if(G.show) return;
+    if(+b.dataset.i===G.done){ G.done++; g.ok(120); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
+  prog:G=>G.done+'/'+G.seq.length},
+ alvo:{name:'Tiro ao Alvo',say:'Os alvos aparecem e somem rápido! Acerte só os certos. Errar custa escudo.',
+  init(g,G){ G.holes=Array(9).fill(null); G.popIn=400; },
+  loop(g,G,dt,th){ let ch=false; G.popIn-=dt;
+    G.holes.forEach((h,i)=>{ if(h){ h.t-=dt; if(h.t<=0){ G.holes[i]=null; ch=true; } } });
+    if(G.popIn<=0){ G.popIn=950/th.speed; const free=G.holes.map((h,i)=>h?-1:i).filter(i=>i>=0), on=G.holes.filter(Boolean).map(h=>h.txt);
+      const cand=G.good.filter(x=>!G.caught[x]&&on.indexOf(x)<0), bad=G.bad.filter(x=>on.indexOf(x)<0);
+      if(free.length){ const ok=cand.length&&(!bad.length||Math.random()<.5), txt=ok?gmPick(cand,1)[0]:gmPick(bad,1)[0]; if(txt){ G.holes[gmPick(free,1)[0]]={txt:txt,ok:!!ok,t:2300/th.speed}; ch=true; } } }
+    if(ch) g.board(); },
+  html(g,G,th,c){ return '<p class="gm-note">Acerte '+G.target+' · '+gmEsc(c.title)+'</p><div class="gm-holes">'+G.holes.map((h,i)=>h?'<button class="gm-hole up" data-g="m" data-ok="'+(h.ok?1:0)+'" data-h="'+i+'">🎯 '+gmEsc(h.txt)+'</button>':'<span class="gm-hole" aria-hidden="true"></span>').join('')+'</div>'; },
+  tap(g,G,b){ const i=+b.dataset.h, h=G.holes[i]; if(!h) return; G.holes[i]=null;
+    if(h.ok){ G.caught[h.txt]=1; G.got++; g.ok(100); if(G.got>=G.target) return g.win(); g.board(); } else if(!g.miss()) g.board(); },
+  prog:G=>G.got+'/'+G.target},
+ duelo:{name:'Duelo de Cartas',say:'Duelo! Duas cartas, só uma completa a frase. Seja rápido para fazer combo.',opts:2,
+  init(g,G){ G.combo=1; G.rt=0; },
+  loop(g,G,dt,th){ G.rt+=dt; const lim=7000/th.speed, bar=g.root&&g.root.querySelector('.gm-bar i'); if(bar) bar.style.width=Math.max(0,100-G.rt/lim*100)+'%';
+    if(G.rt>=lim){ G.combo=1; G.rt=0; if(!g.miss()){ G.q++; if(G.q>=G.rounds.length) return g.win(); g.board(); } } },
+  html(g,G){ const r=G.rounds[G.q]; return '<p class="gm-sent">'+gmSent(r)+'</p><div class="gm-bar"><i></i></div><p class="gm-kick">Combo ×'+G.combo+'</p><div class="gm-duel">'+r.opts.map(o=>'<button class="gm-dcard" data-g="m" data-ok="'+(o===r.w?1:0)+'"><span aria-hidden="true">🃏</span>'+gmEsc(o)+'</button>').join('')+'</div>'; },
+  tap(g,G,b){ G.rt=0; if(b.dataset.ok==='1'){ g.ok(100*G.combo); G.combo=Math.min(4,G.combo+1); } else { G.combo=1; if(g.miss(b)) return; }
+    G.q++; if(G.q>=G.rounds.length) return g.win(); g.board(); },
+  prog:G=>G.q+'/'+G.rounds.length},
+ codigo:{name:'Código Secreto',say:'Quebre o código! Chute a palavra: verde é letra certa no lugar certo, amarelo é letra que existe em outro lugar.',len:[4,7],noLives:true,
+  init(g,G){ G.L=gmLetters(G.word); G.tries=[]; G.cur=''; G.keys={}; },
+  html(g,G){ const L=G.L.length, rows=G.tries.concat(G.tries.length<6?[{w:G.cur.padEnd(L,' '),c:[]}]:[]);
+    while(rows.length<6) rows.push({w:' '.repeat(L),c:[]});
+    return '<p class="gm-sent">'+gmMask(G.sent,G.word,'<u>'+L+' letras</u>')+'</p><div class="gm-wordle">'+rows.map(r=>'<div class="gm-wrow">'+r.w.split('').map((ch,i)=>'<span class="gm-wc '+(r.c[i]||'')+'">'+ch.trim()+'</span>').join('')+'</div>').join('')+'</div>'+
+     '<div class="gm-keys">'+gmAZ.map(ch=>'<button class="gm-key '+(G.keys[ch]||'')+'" data-g="m" data-k="'+ch+'">'+ch+'</button>').join('')+'<button class="gm-key wide" data-g="m" data-k="del" aria-label="Apagar">⌫</button><button class="gm-key wide go" data-g="m" data-k="ok">OK</button></div>'; },
+  tap(g,G,b){ const k=b.dataset.k, L=G.L;
+    if(k==='del'){ G.cur=G.cur.slice(0,-1); return g.board(); }
+    if(k!=='ok'){ if(G.cur.length<L.length) G.cur+=k; return g.board(); }
+    if(G.cur.length<L.length) return g.bad(g.root.querySelector('.gm-wrow:nth-child('+(G.tries.length+1)+')'));
+    const res=Array(L.length).fill('x'), left={};
+    L.split('').forEach((ch,i)=>{ if(G.cur[i]===ch) res[i]='g'; else left[ch]=(left[ch]||0)+1; });
+    G.cur.split('').forEach((ch,i)=>{ if(res[i]!=='g'&&left[ch]){ res[i]='y'; left[ch]--; } });
+    G.cur.split('').forEach((ch,i)=>{ const r=res[i], o=G.keys[ch]; if(r==='g'||(r==='y'&&o!=='g')||(!o)) G.keys[ch]=r; });
+    G.tries.push({w:G.cur,c:res}); const win=G.cur===L; G.cur='';
+    if(win){ g.ok(120*(7-G.tries.length)); return g.win(); }
+    G.err++; g.bad(); if(G.tries.length>=6) return g.end(false); g.board(); g.hud(); },
+  stars:G=>G.tries.length<=3?3:G.tries.length<=5?2:1,
+  prog:G=>'Tentativa '+Math.min(6,G.tries.length+1)+'/6'},
+/* ===== EXCURSIONISTA · 14 anos · Zona de Sobrevivência ===== */
+ rota:{name:'Rota de Pouso',say:'Trace a rota! Toque nos pontos do mapa na ordem certa antes que a zona feche.',
+  init(g,G){ const cells=gmShuffle([...Array(12).keys()]); G.pts=G.seq.map((_,i)=>{ const c=cells[i%12]; return {x:10+(c%3)*30+Math.random()*14,y:10+Math.floor(c/3)*22+Math.random()*8}; }); },
+  html(g,G,th,c){ const path=G.pts.slice(0,G.done).map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    return '<div class="gm-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+path+'" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/></svg>'+
+     G.seq.map((x,i)=>'<button class="gm-pt'+(i<G.done?' ok':'')+'" style="left:'+G.pts[i].x+'%;top:'+G.pts[i].y+'%" data-g="m" data-i="'+i+'"'+(i<G.done?' disabled':'')+'>'+(i<G.done?'<b>'+gmSeqLabel(c,G,i)+'</b> ':'📍 ')+gmEsc(x)+'</button>').join('')+'</div><p class="gm-kick">Próximo ponto: '+gmSeqLabel(c,G,G.done)+'</p>'; },
+  tap(g,G,b){ const i=+b.dataset.i; if(i<G.done) return; if(i===G.done){ G.done++; g.ok(110); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
+  prog:G=>G.done+'/'+G.seq.length},
+ airdrop:{name:'Airdrop',say:'Suprimentos caindo do avião! Colete só os certos. Caixa errada custa kit médico.',
+  init(g,G){ G.tokens=[]; G.spawnIn=null; },
+  html(g,G,th,c){ return '<p class="gm-note">Colete '+G.target+' · '+gmEsc(c.title)+'</p><div class="gm-field" aria-label="Zona de queda"></div>'; },
+  loop(g,G,dt,th){ gmTokens(g,G,dt,th,{dir:1,every:1200,cls:'drop',emoji:'🪂',wob:6}); },
+  tap(g,G,b){ gmTokTap(g,G,b); },
+  prog:G=>G.got+'/'+G.target},
+ radio:{name:'Rádio Interceptado',say:'Mensagem chegando pelo rádio! Uma palavra veio cortada. Descubra qual é.',opts:4,
+  init(g,G){ G.ty=0; },
+  loop(g,G,dt,th){ const r=G.rounds[G.q], el=g.root&&g.root.querySelector('.gm-radio'); if(!el||!r) return; const full=r.q?r.q.replace(/<[^>]+>/g,''):r.s.replace(r.w,'▇'.repeat(r.w.length));
+    if(G.ty<full.length){ G.ty+=dt*.035*th.speed; el.textContent=full.slice(0,Math.floor(G.ty))+'▌'; } else el.textContent=full; },
+  html(g,G){ const r=G.rounds[G.q]; G.ty=0; return '<p class="gm-kick">📻 Transmissão '+(G.q+1)+' de '+G.rounds.length+'</p><p class="gm-radio" aria-live="polite"></p><div class="gm-opts">'+gmChoiceBtns(r)+'</div>'; },
+  tap(g,G,b){ if(b.dataset.ok==='1'){ G.q++; g.ok(120); if(G.q>=G.rounds.length) return g.win(); g.board(); } else g.miss(b); },
+  prog:G=>G.q+'/'+G.rounds.length},
+ cofre:{name:'Cofre',say:'Abra o cofre! Gire cada roda até a letra certa e tente abrir. O cofre diz quantas rodas estão certas.',len:[4,8],
+  init(g,G){ G.L=gmLetters(G.word); G.dials=G.L.split('').map(ch=>{ const o=gmShuffle([ch].concat(gmPick(gmAZ.filter(x=>x!==ch),3))); return {o:o,i:Math.floor(Math.random()*4)}; }); G.fb=''; },
+  html(g,G){ return '<p class="gm-sent">'+gmMask(G.sent,G.word,'<u>?</u>')+'</p><div class="gm-dials">'+G.dials.map((d,i)=>'<button class="gm-dial" data-g="m" data-k="d" data-i="'+i+'" aria-label="Roda '+(i+1)+': '+d.o[d.i]+'"><small>▲</small>'+d.o[d.i]+'<small>▼</small></button>').join('')+'</div>'+
+    (G.fb?'<p class="gm-note" style="text-align:center" role="status">'+G.fb+'</p>':'')+'<div class="gm-row" style="justify-content:center"><button class="gm-btn" data-g="m" data-k="abrir">🔓 Abrir</button></div>'; },
+  tap(g,G,b){ if(b.dataset.k==='d'){ const d=G.dials[+b.dataset.i]; d.i=(d.i+1)%4; gmBeep(420,.04,'square'); return g.board(); }
+    const right=G.dials.filter((d,i)=>d.o[d.i]===G.L[i]).length;
+    if(right===G.L.length){ g.ok(150); return g.win(); }
+    G.fb=right+' de '+G.L.length+' rodas certas'; if(!g.miss()) g.board(); },
+  prog:G=>G.L.length+' rodas'},
+/* ===== GUIA · 15 anos · Liga Pro ===== */
+ jogada:{name:'Jogada Ensaiada',say:'Toque de bola! Passe para os jogadores na ordem certa antes do relógio de posse zerar.',
+  spots:[[50,90],[20,72],[80,72],[50,62],[28,46],[72,46],[50,32],[18,24],[82,24],[38,10],[62,10]],
+  init(g,G){ G.slot=gmShuffle(G.seq.map((_,i)=>i+1)); G.clock=0; },
+  loop(g,G,dt,th){ G.clock+=dt; const lim=9000/th.speed, bar=g.root&&g.root.querySelector('.gm-bar i'); if(bar) bar.style.width=Math.max(0,100-G.clock/lim*100)+'%'; if(G.clock>=lim){ G.clock=0; if(!g.miss()) g.board(); } },
+  html(g,G,th,c){ const at=G.done?this.spots[G.slot[G.done-1]]:this.spots[0];
+    return '<div class="gm-bar"><i></i></div><div class="gm-pitch"><span class="gm-ball" style="left:'+at[0]+'%;top:'+at[1]+'%" aria-hidden="true">⚽</span>'+
+     G.seq.map((x,i)=>{ const p=this.spots[G.slot[i]]; return '<button class="gm-pt ply'+(i<G.done?' ok':'')+'" style="left:'+p[0]+'%;top:'+p[1]+'%" data-g="m" data-i="'+i+'"'+(i<G.done?' disabled':'')+'>'+(i<G.done?'<b>'+gmSeqLabel(c,G,i)+'</b> ':'')+gmEsc(x)+'</button>'; }).join('')+'</div><p class="gm-kick">Passe '+(G.done+1)+': '+gmSeqLabel(c,G,G.done)+'</p>'; },
+  tap(g,G,b){ const i=+b.dataset.i; if(i<G.done) return; if(i===G.done){ G.done++; G.clock=0; g.ok(110); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
+  prog:G=>G.done+'/'+G.seq.length},
+ escalacao:{name:'Escalação',say:'Monte o time titular! Escale só os jogadores certos e confirme. Escalação errada custa energia.',
+  init(g,G){ const good=gmPick(G.good,G.target), bad=gmPick(G.bad,G.target+1); G.pool=gmShuffle(good.map(t=>({t:t,ok:1})).concat(bad.map(t=>({t:t,ok:0})))); G.fb=''; },
+  html(g,G,th,c){ const n=G.pool.filter(x=>x.on).length;
+    return '<p class="gm-note">Escale '+G.target+' · '+gmEsc(c.title)+'</p><div class="gm-chips">'+G.pool.map((x,i)=>'<button class="gm-chip'+(x.on?' on':'')+(x.cut?' no':'')+'" data-g="m" data-ok="'+x.ok+'" data-i="'+i+'" aria-pressed="'+!!x.on+'"'+(x.cut?' disabled':'')+'>'+(x.on?'✔ ':'')+gmEsc(x.t)+'</button>').join('')+'</div>'+
+     (G.fb?'<p class="gm-note" role="status">'+G.fb+'</p>':'')+'<div class="gm-row"><button class="gm-btn" data-g="m" data-k="ok"'+(n===G.target?'':' disabled')+'>Confirmar escalação ('+n+'/'+G.target+')</button></div>'; },
+  tap(g,G,b){ if(b.dataset.k==='ok'){ const wrong=G.pool.filter(x=>x.on&&!x.ok);
+      if(!wrong.length){ G.got=G.target; g.ok(100*G.target); return g.win(); }
+      wrong.forEach(x=>{ x.on=false; x.cut=true; }); G.fb=wrong.length+' jogador'+(wrong.length>1?'es':'')+' fora de posição: cortado'+(wrong.length>1?'s':'')+' do time.'; if(!g.miss()) g.board(); return; }
+    const x=G.pool[+b.dataset.i]; if(x.cut) return; const n=G.pool.filter(y=>y.on).length; if(!x.on&&n>=G.target) return g.bad(b); x.on=!x.on; g.board(); },
+  prog:G=>G.pool.filter(x=>x.on).length+'/'+G.target},
+ contra:{name:'Contra-ataque',say:'Contra-ataque relâmpago! Acerte o máximo de frases antes do apito final. Acertos seguidos multiplicam os pontos.',opts:3,
+  init(g,G){ G.combo=1; G.hits=0; G.need=6; G.cur=g.mkRound(G.c,1); },
+  html(g,G){ const r=G.cur; return '<p class="gm-kick">Gols: '+G.hits+'/'+G.need+' · combo ×'+G.combo+'</p><p class="gm-sent">'+gmSent(r)+'</p><div class="gm-opts">'+gmChoiceBtns(r)+'</div>'; },
+  tap(g,G,b){ if(b.dataset.ok==='1'){ G.hits++; g.ok(80*G.combo); G.combo=Math.min(5,G.combo+1); if(G.hits>=G.need+4) return g.win(); }
+    else { G.combo=1; if(g.miss(b)) return; }
+    G.cur=g.mkRound(G.c,1); g.board(); g.hud(); },
+  timeUp(g,G){ g.end(G.hits>=G.need); },
+  stars:G=>G.hits>=G.need+4?3:G.hits>=G.need+2?2:1,
+  prog:G=>'Gols '+G.hits+'/'+G.need},
+ semvogais:{name:'Sem Vogais',say:'A palavra chegou sem vogais! Digite a palavra inteira. Errou? O placar mostra as letras certas no lugar.',len:[5,12],
+  init(g,G){ G.L=gmLetters(G.word); G.cur=''; G.hint={}; },
+  html(g,G){ const sk=G.L.split('').map((ch,i)=>G.hint[i]?ch:'AEIOU'.indexOf(ch)>=0?'_':ch).join('');
+    return '<p class="gm-sent">'+gmMask(G.sent,G.word,'<u>?</u>')+'</p><p class="gm-skel" aria-label="Palavra sem vogais">'+sk+'</p><div class="gm-word">'+G.L.split('').map((_,i)=>'<span>'+(G.cur[i]||'')+'</span>').join('')+'</div>'+
+     '<div class="gm-keys">'+gmAZ.map(ch=>'<button class="gm-key" data-g="m" data-k="'+ch+'">'+ch+'</button>').join('')+'<button class="gm-key wide" data-g="m" data-k="del" aria-label="Apagar">⌫</button><button class="gm-key wide go" data-g="m" data-k="ok">Chutar</button></div>'; },
+  tap(g,G,b){ const k=b.dataset.k;
+    if(k==='del'){ G.cur=G.cur.slice(0,-1); return g.board(); }
+    if(k!=='ok'){ if(G.cur.length<G.L.length) G.cur+=k; return g.board(); }
+    if(G.cur===G.L){ g.ok(200); return g.win(); }
+    G.L.split('').forEach((ch,i)=>{ if(G.cur[i]===ch) G.hint[i]=1; }); G.cur=''; if(!g.miss()) g.board(); },
+  prog:G=>G.L.length+' letras'}
+};
+
+/* ---------- motor ---------- */
+const gmThemeFor=(t,it)=>GM_THEMES[GM_CLASS_AGE[it.esp?memberClass(t):it.cls]]||GM_THEMES[10];
 const GKEY=t=>'trilha-dbv.jogos.'+Store.mode+'.'+t.id;
 const gmBest=(t,key)=>(LS.get(GKEY(t))||{})[key]||null;
 const gmStars=n=>'<span class="gm-stars" aria-label="'+n+' de 3 estrelas">'+'★'.repeat(n)+'</span>';
 let gmAC=null;
 function gmBeep(f,d,type){
   if(LS.get('trilha-dbv.jogos.mudo')) return;
-  try{ gmAC=gmAC||new (window.AudioContext||window.webkitAudioContext)(); const o=gmAC.createOscillator(), g=gmAC.createGain(), t=gmAC.currentTime;
-    o.type=type||'square'; o.frequency.value=f; g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(gmAC.destination); o.start(t); o.stop(t+d); }catch(e){}
+  try{ gmAC=gmAC||new (window.AudioContext||window.webkitAudioContext)(); const o=gmAC.createOscillator(), gn=gmAC.createGain(), t=gmAC.currentTime;
+    o.type=type||'square'; o.frequency.value=f; gn.gain.setValueAtTime(.05,t); gn.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(gn); gn.connect(gmAC.destination); o.start(t); o.stop(t+d); }catch(e){}
 }
-
 const Game={
   root:null, G:null, raf:0, timer:0, fonts:false,
-  th(){ return GM_THEMES[this.G.age]; },
+  th(){ return this.G.th; },
   ch(){ return this.G.list[this.G.sel]; },
+  mech(c){ return GM_MECH[this.G.th.mech[(c||this.ch()).shape]]; },
   open(t,it){
     if(!this.fonts){ this.fonts=true; const l=document.createElement('link'); l.rel='stylesheet'; l.href=GM_FONTS; document.head.appendChild(l); }
     this.close(true);
     const who=me();
-    this.G={t:t,it:it,age:gmAge(t),list:gmChallenges(it),sel:0,phase:'intro',self:!!who&&who.id===t.id&&!Store.readOnly};
+    this.G={t:t,it:it,th:gmThemeFor(t,it),list:gmContents(it),sel:0,phase:'intro',self:!!who&&who.id===t.id&&!Store.readOnly};
     this.root=document.createElement('div'); this.root.id='gm'; document.body.appendChild(this.root);
-    this.root.addEventListener('click',ev=>{ const b=ev.target.closest('[data-g]'); if(b) this.act(b); });
+    this.root.addEventListener('click',ev=>{ const b=ev.target.closest('[data-g]'); if(b&&!b.disabled) this.act(b); });
     document.documentElement.style.overflow='hidden';
     this.draw(); const x=this.root.querySelector('[data-g="start"]'); if(x) x.focus();
   },
-  close(quiet){
-    this.stop(); if(this.root) this.root.remove(); this.root=null; const had=!!this.G; this.G=null; document.documentElement.style.overflow='';
-    if(had&&!quiet) render();
-  },
+  close(quiet){ this.stop(); if(this.root) this.root.remove(); this.root=null; const had=!!this.G; this.G=null; document.documentElement.style.overflow=''; if(had&&!quiet) render(); },
   stop(){ cancelAnimationFrame(this.raf); this.raf=0; clearInterval(this.timer); this.timer=0; },
   act(b){
     const G=this.G, a=b.dataset.g; if(!G) return;
     if(a==='close') return this.close();
     if(a==='mute'){ LS.set('trilha-dbv.jogos.mudo',!LS.get('trilha-dbv.jogos.mudo')); return this.draw(); }
-    if(a==='age'){ G.age=+b.dataset.v; return this.draw(); }
     if(a==='sel'){ G.sel=+b.dataset.i; return this.draw(); }
     if(a==='intro'){ this.stop(); G.phase='intro'; return this.draw(); }
     if(a==='start') return this.start();
-    if(G.phase!=='play'||G.over) return;
-    if(a==='chip') this.tapOrdem(b); else if(a==='tok') this.tapCaca(b); else if(a==='card') this.tapCard(b); else if(a==='key') this.tapKey(b); else if(a==='opt') this.tapOpt(b);
+    if(a==='m'&&G.phase==='play'&&!G.over) G.m.tap(this,G,b);
   },
-  /* ---------- telas ---------- */
   draw(){
     const G=this.G, th=this.th(), it=G.it, mute=LS.get('trilha-dbv.jogos.mudo');
-    const top='<div class="gm-top"><span class="gm-logo" aria-hidden="true">'+th.icon+'</span><div class="gm-tt"><b>'+esc(th.name)+'</b><small>'+(it.esp?'Especialidade · '+esc(it.esp.n):esc(CLS[it.cls].name)+(it.adv?' avançada':'')+' · requisito '+esc(itemLabel(it)))+'</small></div>'+
+    const sub=it.esp?'Especialidade · '+esc(it.esp.n):esc(CLS[it.cls].name)+(it.adv?' avançada':'')+' · requisito '+esc(itemLabel(it));
+    const top='<div class="gm-top"><span class="gm-logo" aria-hidden="true">'+th.icon+'</span><div class="gm-tt"><b>'+esc(th.name)+'</b><small>'+sub+'</small></div>'+
       '<button class="gm-x" data-g="mute" aria-label="'+(mute?'Ligar som':'Desligar som')+'">'+(mute?'🔇':'🔊')+'</button><button class="gm-x" data-g="close" aria-label="Fechar o jogo">✕</button></div>';
-    let body='';
-    if(G.phase==='intro') body=this.introHtml();
-    else if(G.phase==='play') body='<div class="gm-card gm-play"><div class="gm-hud" aria-live="polite"></div><div class="gm-board"></div></div>';
-    else body=this.endHtml();
-    this.root.innerHTML='<div class="gm" data-th="'+th.id+'" role="dialog" aria-modal="true" aria-label="Minijogo do requisito"><div class="gm-in">'+top+body+'</div></div>';
+    const body=G.phase==='intro'?this.introHtml():G.phase==='play'?'<div class="gm-card gm-play" data-mech="'+G.th.mech[this.ch().shape]+'"><div class="gm-hud" aria-live="polite"></div><div class="gm-board"></div></div>':this.endHtml();
+    this.root.innerHTML='<div class="gm" data-th="'+th.id+'" role="dialog" aria-modal="true" aria-label="Minijogo"><div class="gm-in">'+top+body+'</div></div>';
     if(G.phase==='play'){ this.hud(); this.board(); }
   },
   introHtml(){
-    const G=this.G, th=this.th(), c=this.ch(), best=gmBest(G.t,G.it.key);
+    const G=this.G, th=this.th(), c=this.ch(), m=this.mech(), best=gmBest(G.t,G.it.key), lives=m.noLives?'Você tem 6 chutes. ':'Você tem '+th.lives+' '+esc(th.lifeName)+'. ';
+    const card=G.it.esp?'Estilo do cartão atual de '+esc(firstName(G.t.name))+' ('+esc(CLS[memberClass(G.t)].name)+')':'Jogo do cartão de '+esc(CLS[G.it.cls].name);
     return '<div class="gm-card">'+(G.it.esp?'<p class="gm-kick">Especialidade</p><p class="gm-req"><b>'+esc(G.it.esp.n)+'</b> · '+G.it.esp.r.length+' requisitos</p>':'<p class="gm-kick">Requisito</p><p class="gm-req">'+esc(G.it.t)+'</p>')+'</div>'+
-     (G.list.length>1?'<div class="gm-card"><p class="gm-kick">Escolha o desafio</p><div class="gm-row">'+G.list.map((x,i)=>'<button class="gm-opt'+(i===G.sel?' on':'')+'" data-g="sel" data-i="'+i+'" aria-pressed="'+(i===G.sel)+'">'+esc(x.modeName||GM_MODES[x.mode])+': '+esc(x.title)+'</button>').join('')+'</div></div>':'')+
-     '<div class="gm-card"><p class="gm-kick">'+esc(c.modeName||GM_MODES[c.mode])+(c.title?' · '+esc(c.title):'')+'</p><h2 class="gm-h">'+esc(c.say||th.say[c.mode])+'</h2>'+
-      '<p class="gm-note">'+(th.time?'Tempo: '+th.time+' segundos. ':'Sem pressa: não tem relógio. ')+(c.mode==='memoria'?'':'Você tem '+(c.mode==='forca'?th.lives+2:th.lives)+' '+esc(th.lifeName)+'. ')+(best?'Seu recorde: '+'★'.repeat(best.s)+' · '+best.p+' '+esc(th.pts)+'.':'')+'</p>'+
-      '<div class="gm-row"><button class="gm-btn" data-g="start">Jogar ▶</button></div></div>'+
-     '<div class="gm-card"><p class="gm-kick">Estilo da idade</p><div class="gm-row">'+Object.keys(GM_THEMES).map(a=>'<button class="gm-opt'+(+a===G.age?' on':'')+'" data-g="age" data-v="'+a+'" aria-pressed="'+(+a===G.age)+'">'+a+' anos · '+esc(GM_THEMES[a].name)+'</button>').join('')+'</div>'+
-      '<p class="gm-note">Começa pela idade de '+esc(firstName(G.t.name))+'. Quanto mais velho, mais rápido e com menos ajuda. Estilo inspirado em '+esc(th.inspo)+'.</p></div>';
+     (G.list.length>1?'<div class="gm-card"><p class="gm-kick">Escolha a missão</p><div class="gm-row">'+G.list.map((x,i)=>'<button class="gm-opt'+(i===G.sel?' on':'')+'" data-g="sel" data-i="'+i+'" aria-pressed="'+(i===G.sel)+'">'+esc(this.mech(x).name)+': '+esc(x.title)+'</button>').join('')+'</div></div>':'')+
+     '<div class="gm-card"><p class="gm-kick">'+esc(m.name)+' · '+esc(c.title)+'</p><h2 class="gm-h">'+esc(m.say)+'</h2>'+
+      '<p class="gm-note">'+(th.time?'Tempo: '+th.time+' segundos. ':'Sem pressa: não tem relógio. ')+lives+(best?'Seu recorde: '+'★'.repeat(best.s)+' · '+best.p+' '+esc(th.pts)+'.':'')+'</p>'+
+      '<div class="gm-row"><button class="gm-btn" data-g="start">Jogar ▶</button></div><p class="gm-note">'+card+': '+esc(th.name)+', inspirado em '+esc(th.inspo)+'.</p></div>';
   },
   endHtml(){
-    const G=this.G, th=this.th(), r=G.result;
-    const rank=G.age===15?['Sem divisão','Bronze','Prata','Ouro'][r.stars]:'';
+    const G=this.G, th=this.th(), r=G.result, c=this.ch();
+    const rank=th.id==='liga'?['Sem divisão','Bronze','Prata','Ouro'][r.stars]:'';
     return '<div class="gm-card gm-end"><div class="gm-big" aria-hidden="true">'+(r.win?th.emo[2]:'💫')+'</div><h2 class="gm-h" style="text-align:center">'+esc(r.win?th.win:th.lose)+'</h2>'+
      '<div class="gm-starrow" aria-label="'+r.stars+' de 3 estrelas">'+[0,1,2].map(i=>'<span class="'+(i<r.stars?'':'off')+'">★</span>').join('')+'</div>'+
      '<p style="text-align:center"><b class="num">'+r.score+'</b> '+esc(th.pts)+' · '+r.err+' erro'+(r.err===1?'':'s')+(rank?' · Divisão '+rank:'')+(r.record?' · <b>novo recorde!</b>':'')+'</p>'+
-     (r.win&&this.ch().mode==='ordem'?'<ol class="gm-recap">'+this.G.seq.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+
+     (c.shape==='seq'&&G.seq?'<ol class="gm-recap" start="'+(G.base+1)+'">'+G.seq.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+
      (r.answer?'<p class="gm-note" style="text-align:center">A palavra era <b>'+esc(r.answer)+'</b>.</p>':'')+
      '<p class="gm-note" style="text-align:center">'+(G.self?(G.it.esp?'O jogo é treino: a especialidade continua sendo enviada e aprovada no caderno.':'O jogo é treino: o requisito continua sendo enviado e aprovado no cartão.'):'Prévia da liderança: as estrelas só ficam guardadas quando o próprio desbravador joga.')+'</p>'+
-     '<div class="gm-row" style="justify-content:center"><button class="gm-btn" data-g="start">Jogar de novo</button>'+(G.list.length>1?'<button class="gm-btn alt" data-g="intro">Outro desafio</button>':'')+'<button class="gm-btn alt" data-g="close">Voltar ao cartão</button></div></div>';
+     '<div class="gm-row" style="justify-content:center"><button class="gm-btn" data-g="start">Jogar de novo</button>'+(G.list.length>1?'<button class="gm-btn alt" data-g="intro">Outra missão</button>':'')+'<button class="gm-btn alt" data-g="close">Voltar</button></div></div>';
   },
   hud(){
-    const G=this.G, th=this.th(), el=this.root&&this.root.querySelector('.gm-hud'); if(!el) return;
-    const c=this.ch(), prog=c.mode==='ordem'?G.done+'/'+G.seq.length:c.mode==='caca'?G.got+'/'+G.target:c.mode==='memoria'?Object.keys(G.found).length+'/'+G.pairs:c.mode==='quiz'?Math.min(G.q+1,G.rounds.length)+'/'+G.rounds.length:'';
-    el.innerHTML=(c.mode==='memoria'?'<span>Erros: <b class="num">'+G.err+'</b></span>':'<span class="gm-lives" aria-label="'+G.lives+' '+esc(th.lifeName)+'">'+(th.life.repeat(Math.max(0,G.lives))||'—')+'</span>')+
-      (prog?'<span class="num">'+prog+'</span>':'')+'<span class="num">'+G.score+' '+esc(th.pts)+'</span>'+
+    const G=this.G, th=this.th(), el=this.root&&this.root.querySelector('.gm-hud'); if(!el||!G.m) return;
+    const prog=G.m.prog?G.m.prog(G):'';
+    el.innerHTML=(G.m.noLives?'':'<span class="gm-lives" aria-label="'+G.lives+' '+esc(th.lifeName)+'">'+(th.life.repeat(Math.max(0,G.lives))||'—')+'</span>')+
+      (prog?'<span class="num">'+esc(prog)+'</span>':'')+'<span class="num">'+G.score+' '+esc(th.pts)+'</span>'+
       (th.time?'<span class="gm-time" role="progressbar" aria-label="Tempo" aria-valuemin="0" aria-valuemax="'+th.time+'" aria-valuenow="'+Math.max(0,Math.ceil(G.left))+'"><i style="width:'+Math.max(0,G.left/th.time*100)+'%"></i></span>':'');
   },
-  /* ---------- começar ---------- */
-  start(){
-    this.stop(); const G=this.G, th=this.th(), c=this.ch();
-    Object.assign(G,{phase:'play',over:false,score:0,err:0,lives:th.lives,left:th.time,t0:Date.now(),result:null});
-    if(c.mode==='ordem'){ const n=c.full?c.items.length:Math.min(th.n,c.items.length), s=Math.floor(Math.random()*(c.items.length-n+1));
-      G.seq=c.items.slice(s,s+n); G.base=c.plain?0:s; G.done=0; G.pool=gmShuffle(G.seq.map((_,i)=>i)); }
-    else if(c.mode==='caca'){ G.target=Math.min(th.n,c.items.length); G.got=0; G.caught={}; G.tokens=[]; G.spawnIn=300; G.last=0; }
-    else if(c.mode==='memoria'){ G.pairs=Math.min(th.pairs,c.items.length); const pick=gmPick(c.items,G.pairs);
-      G.deck=gmShuffle(pick.concat(pick).map((v,i)=>({v:v,e:th.emo[pick.indexOf(v)%th.emo.length]}))); G.up=[]; G.found={}; G.lock=false; }
-    else if(c.mode==='forca'){ G.sent=c.sents?gmPick(c.sents,1)[0]:G.it.t; const w=gmPick(c.sents?gmWords(G.sent):c.words,1)[0]; G.word=w; G.guess={}; G.lives=th.lives+2; if(th.hint) G.guess[normTxt(w[0]).toUpperCase()]=true; }
-    else if(c.mode==='quiz'){ const R=G.age<=11?2:3; G.q=0; G.lock=false;
-      if(c.kind==='area'){ const e=G.it.esp, list=[e].concat(gmPick(ESP.filter(x=>x.id!==e.id),R+(G.age>=13?2:0))), names=Object.keys(AREAS).map(k=>AREAS[k].n);
-        G.rounds=list.map(x=>{ const w=AREAS[x.a].n; return {q:'Em qual área fica a especialidade <b>'+esc(x.n)+'</b>?',w:w,opts:gmShuffle([w].concat(gmPick(names.filter(n=>n!==w),3)))}; }); }
-      else {
-        const src=c.sents?gmPick(c.sents,Math.min(R,c.sents.length)).map(x=>({s:x,w:gmPick(gmWords(x),1)[0]})):gmPick(c.words,Math.min(R,c.words.length)).map(w=>({s:G.it.t,w:w}));
-        const texts=G.it.esp?gmPick(ESP.filter(x=>x.id!==G.it.esp.id),6).reduce((a,x)=>a.concat(x.r),[]):LIST[G.it.cls].reg.concat(LIST[G.it.cls].av).map(x=>x.t);
-        const pool=[], seen={}; texts.forEach(t=>gmWords(t).forEach(w=>{ const n=normTxt(w); if(!seen[n]&&!src.some(y=>normTxt(y.s).indexOf(n)>=0)){ seen[n]=1; pool.push(w); } }));
-        G.rounds=src.map(x=>{ const near=pool.filter(p=>Math.abs(p.length-x.w.length)<=3); const bad=gmPick(near.length>=3?near:pool,3); return {s:x.s,w:x.w,opts:gmShuffle([x.w].concat(bad))}; }); } }
-    this.draw();
-    if(th.time) this.timer=setInterval(()=>{ if(!this.G||this.G.phase!=='play') return; this.G.left=th.time-(Date.now()-this.G.t0)/1000; if(this.G.left<=0){ this.G.left=0; this.end(false); } else this.hud(); },250);
-    if(c.mode==='caca') this.raf=requestAnimationFrame(t=>this.loop(t));
+  board(){ const G=this.G, el=this.root&&this.root.querySelector('.gm-board'); if(el&&G.m){ el.innerHTML=G.m.html(this,G,this.th(),this.ch()); if(G.L) el.dataset.a=G.L; } },
+  /* frase com uma palavra faltando (ou a pergunta de área, nas especialidades) */
+  mkRound(c,i){
+    const G=this.G, m=G.m, k=m.opts||4;
+    if(c.kind==='area'){ const e=G.it.esp, x=i===0?e:gmPick(ESP.filter(y=>y.id!==e.id),1)[0], w=AREAS[x.a].n, names=Object.keys(AREAS).map(a=>AREAS[a].n);
+      return {q:'Em qual área fica a especialidade <b>'+esc(x.n)+'</b>?',w:w,opts:gmShuffle([w].concat(gmPick(names.filter(n=>n!==w),k-1)))}; }
+    const sents=c.sents||[G.it.t];
+    if(!G.pool){ const texts=G.it.esp?gmPick(ESP.filter(x=>x.id!==G.it.esp.id),6).reduce((a,x)=>a.concat(x.r),[]):(c.others||[]); G.pool=gmCardWords(texts,gmWords(sents.join(' '))); if(G.pool.length<3) G.pool=G.pool.concat(['caminhada','acampamento','unidade','oração','natureza','reunião'].filter(x=>!sents.some(s=>normTxt(s).indexOf(normTxt(x))>=0))); }
+    let s, w, n=0; do { s=gmPick(sents,1)[0]; w=gmPick(gmWords(s),1)[0]; n++; } while((!w||w===G.lastW)&&n<8);
+    if(!w){ s=sents[0]; w=gmWords(s)[0]||'Desbravador'; }
+    G.lastW=w; const near=G.pool.filter(p=>Math.abs(p.length-w.length)<=3);
+    return {s:s,w:w,opts:gmShuffle([w].concat(gmPick(near.length>=k-1?near:G.pool,k-1)))};
   },
-  board(){
-    const G=this.G, th=this.th(), c=this.ch(), el=this.root&&this.root.querySelector('.gm-board'); if(!el) return;
-    if(c.mode==='ordem'){
-      el.innerHTML='<ol class="gm-slots">'+G.seq.map((x,i)=>'<li class="gm-slot'+(i<G.done?' ok':'')+'"><b>'+(c.label?esc(c.label)+' ':'')+(G.base+i+1)+'</b><span>'+(i<G.done?esc(x):i===G.done&&th.hint&&G.err>=2?esc(x[0])+'…':'')+'</span></li>').join('')+'</ol>'+
-        '<div class="gm-chips">'+G.pool.filter(i=>i>=G.done).map(i=>'<button class="gm-chip" data-g="chip" data-i="'+i+'">'+esc(G.seq[i])+'</button>').join('')+'</div>';
-    } else if(c.mode==='caca'){
-      el.innerHTML='<p class="gm-note">Pegue '+G.target+': '+esc(c.title)+'</p><div class="gm-field" aria-label="Campo do jogo"></div>';
-      G.tokens.forEach(k=>{ k.el=null; }); G.tokens=[];
-    } else if(c.mode==='memoria'){
-      el.innerHTML='<div class="gm-grid">'+G.deck.map((d,i)=>{ const ok=G.found[d.v], up=ok||G.up.indexOf(i)>=0;
-        return '<button class="gm-card-m'+(ok?' ok':up?' up':'')+'" data-g="card" data-i="'+i+'" data-v="'+esc(d.v)+'" aria-label="'+(up?esc(d.v):'Carta virada')+'">'+(up?'<span><span class="e" aria-hidden="true">'+d.e+'</span><br>'+esc(d.v)+'</span>':'<span class="e" aria-hidden="true">'+th.back+'</span>')+'</button>'; }).join('')+'</div>';
-    } else if(c.mode==='forca'){
-      const W=G.word, sent=esc(G.sent||G.it.t).replace(esc(W),'<u>?</u>');
-      el.innerHTML='<p class="gm-sent">'+sent+'</p><div class="gm-word" aria-label="Palavra secreta">'+W.split('').map(ch=>'<span>'+(G.guess[normTxt(ch).toUpperCase()]?esc(ch.toUpperCase()):'')+'</span>').join('')+'</div>'+
-        '<div class="gm-keys">'+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(L=>{ const g=G.guess[L], hit=g&&normTxt(W).toUpperCase().indexOf(L)>=0; return '<button class="gm-key'+(g?(hit?' hit':' miss'):'')+'" data-g="key" data-v="'+L+'"'+(g?' disabled':'')+'>'+L+'</button>'; }).join('')+'</div>';
-    } else if(c.mode==='quiz'){
-      const r=G.rounds[G.q]; if(!r) return;
-      el.innerHTML='<p class="gm-sent">'+(r.q||esc(r.s||G.it.t).replace(esc(r.w),'<u>&nbsp;</u>'))+'</p><div class="gm-opts">'+r.opts.map(o=>'<button class="gm-chip" data-g="opt" data-ok="'+(o===r.w?1:0)+'">'+esc(o)+'</button>').join('')+'</div>';
-    }
+  start(){
+    this.stop(); const G=this.G, th=this.th(), c=this.ch(), m=this.mech(c);
+    Object.assign(G,{phase:'play',over:false,score:0,err:0,lives:th.lives,left:th.time,t0:Date.now(),result:null,m:m,c:c,pool:null,lastW:null,last:0});
+    if(c.shape==='seq'){ const n=c.full?Math.min(c.items.length,10):Math.min(th.n,c.items.length), s=Math.floor(Math.random()*(c.items.length-n+1)); G.seq=c.items.slice(s,s+n); G.base=c.plain?0:s; G.done=0; }
+    if(c.shape==='set'){ G.good=c.items; G.bad=c.bad||[]; G.target=Math.min(th.n,c.items.length); G.got=0; G.caught={}; }
+    if(c.shape==='choice'){ G.rounds=[]; if(!m.timeUp) for(let i=0;i<th.rounds;i++) G.rounds.push(this.mkRound(c,i)); G.q=0; }
+    if(c.shape==='letters'){ const sents=c.sents||[G.it.t], all=gmWords(sents.join(' ')), len=m.len||[4,12];
+      const fit=all.filter(w=>{ const L=gmLetters(w).length; return L>=len[0]&&L<=len[1]; }), w=gmPick(fit.length?fit:all.length?all:['Desbravador'],1)[0];
+      G.word=w; G.sent=sents.find(s=>s.indexOf(w)>=0)||sents[0]; }
+    m.init(this,G,th,c);
+    this.draw();
+    if(th.time) this.timer=setInterval(()=>{ const g=this.G; if(!g||g.phase!=='play') return; g.left=th.time-(Date.now()-g.t0)/1000;
+      if(g.left<=0){ g.left=0; if(g.m.timeUp) g.m.timeUp(this,g); else this.end(false); } else this.hud(); },250);
+    if(m.loop){ const step=ts=>{ const g=this.G; if(!g||g!==G||g.phase!=='play') return; const dt=g.last?Math.min(50,ts-g.last):16; g.last=ts; if(!g.over) g.m.loop(this,g,dt,th); this.raf=requestAnimationFrame(step); }; this.raf=requestAnimationFrame(step); }
   },
   good(){ const w=this.th().wave; gmBeep(660,.1,w); setTimeout(()=>gmBeep(990,.12,w),90); },
   bad(el){ gmBeep(150,.25,'sawtooth'); if(el){ el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); } },
+  ok(p){ this.G.score+=p; this.good(); this.hud(); },
+  win(){ this.end(true); },
   miss(el){ const G=this.G; G.err++; G.lives--; this.bad(el); this.hud(); if(G.lives<=0){ G.over=true; setTimeout(()=>{ if(this.G===G&&G.phase==='play') this.end(false); },350); return true; } return false; },
-  /* ---------- mecânicas ---------- */
-  tapOrdem(b){ const G=this.G, i=+b.dataset.i;
-    if(i===G.done){ G.done++; G.score+=100; this.good(); if(G.done>=G.seq.length) return this.end(true); this.board(); this.hud(); }
-    else if(!this.miss(b)&&this.th().hint&&G.err>=2) this.board(); },
-  loop(ts){
-    const G=this.G; if(!G||G.phase!=='play') return; const th=this.th(), c=this.ch();
-    const dt=G.last?Math.min(50,ts-G.last):16; G.last=ts;
-    const field=this.root&&this.root.querySelector('.gm-field');
-    if(field){
-      const H=field.clientHeight;
-      G.spawnIn-=dt;
-      if(G.spawnIn<=0){ G.spawnIn=1300/th.speed;
-        const onField=G.tokens.map(k=>k.txt), cand=c.items.filter(x=>!G.caught[x]&&onField.indexOf(x)<0), bad=(c.bad||[]).filter(x=>onField.indexOf(x)<0);
-        const ok=cand.length&&(!bad.length||Math.random()<.55), txt=ok?gmPick(cand,1)[0]:gmPick(bad,1)[0];
-        if(txt){ const el=document.createElement('button'); el.className='gm-tok'; el.dataset.g='tok'; el.dataset.ok=ok?'1':'0'; el.textContent=txt;
-          el.style.left=(4+Math.random()*50)+'%'; field.appendChild(el); G.tokens.push({txt:txt,ok:!!ok,y:-50,el:el}); }
-      }
-      const v=.06*th.speed*Math.max(1,H/360);
-      G.tokens.forEach(k=>{ k.y+=dt*v; if(k.el) k.el.style.transform='translateY('+k.y+'px)'; if(k.y>H+10){ k.gone=true; if(k.el) k.el.remove(); } });
-      G.tokens=G.tokens.filter(k=>!k.gone);
-    }
-    this.raf=requestAnimationFrame(t=>this.loop(t));
-  },
-  tapCaca(b){ const G=this.G, k=G.tokens.find(x=>x.el===b); if(!k) return;
-    if(k.ok){ k.gone=true; b.remove(); G.tokens=G.tokens.filter(x=>x!==k); G.caught[k.txt]=1; G.got++; G.score+=100; this.good(); this.hud(); if(G.got>=G.target) this.end(true); }
-    else { b.disabled=true; b.style.opacity='.4'; this.miss(b); } },
-  tapCard(b){ const G=this.G, i=+b.dataset.i, d=G.deck[i]; if(G.lock||G.found[d.v]||G.up.indexOf(i)>=0) return;
-    G.up.push(i); this.board();
-    if(G.up.length<2) return gmBeep(520,.05,this.th().wave);
-    const a=G.deck[G.up[0]], z=G.deck[G.up[1]];
-    if(a.v===z.v){ G.found[a.v]=1; G.up=[]; G.score+=150; this.good(); this.board(); this.hud(); if(Object.keys(G.found).length>=G.pairs) this.end(true); }
-    else { G.err++; G.lock=true; this.bad(); this.hud(); setTimeout(()=>{ if(this.G!==G||G.phase!=='play') return; G.up=[]; G.lock=false; this.board(); },G.age<=11?1000:700); } },
-  tapKey(b){ const G=this.G, L=b.dataset.v; if(G.guess[L]) return; G.guess[L]=true; const W=normTxt(G.word).toUpperCase();
-    if(W.indexOf(L)>=0){ G.score+=50*(W.split(L).length-1); this.good(); this.board(); this.hud(); if(W.split('').every(ch=>!/[A-Z]/.test(ch)||G.guess[ch])) this.end(true); }
-    else { this.board(); this.miss(); } },
-  tapOpt(b){ const G=this.G; if(G.lock) return; const ok=b.dataset.ok==='1';
-    if(ok){ G.score+=150; this.good(); b.classList.add('right'); }
-    else { b.classList.add('wrong'); const r=this.root.querySelector('[data-g="opt"][data-ok="1"]'); if(r) r.classList.add('right'); if(this.miss(b)) return; }
-    G.lock=true; setTimeout(()=>{ if(this.G!==G||G.phase!=='play') return; G.lock=false; G.q++; if(G.q>=G.rounds.length) this.end(true); else { this.board(); this.hud(); } },ok?450:1100); },
-  /* ---------- fim ---------- */
   end(win){
-    const G=this.G; if(!G||G.phase!=='play') return; this.stop(); const th=this.th(), c=this.ch();
-    if(win) G.score+=Math.max(0,G.lives)*50+(th.time?Math.round(Math.max(0,G.left))*5:0);
+    const G=this.G; if(!G||G.phase!=='play') return; this.stop(); const th=this.th(), c=this.ch(), m=G.m;
+    if(win) G.score+=(m.noLives?0:Math.max(0,G.lives)*50)+(th.time?Math.round(Math.max(0,G.left))*5:0);
     let stars=0;
-    if(win){ if(c.mode==='memoria') stars=G.err<=Math.floor(G.pairs/2)?3:G.err<=G.pairs?2:1; else stars=G.err===0?3:G.err<=Math.max(1,Math.floor(th.lives/2))?2:1; }
+    if(win) stars=m.stars?m.stars(G):G.err===0?3:G.err<=Math.max(1,Math.floor(th.lives/2))?2:1;
     let record=false;
     if(G.self){ const all=LS.get(GKEY(G.t))||{}, cur=all[G.it.key]||{s:0,p:0,n:0}; record=win&&(stars>cur.s||G.score>cur.p)&&cur.n>0;
       all[G.it.key]={s:Math.max(cur.s,stars),p:Math.max(cur.p,win?G.score:0),n:cur.n+1}; LS.set(GKEY(G.t),all); }
-    G.result={win:win,stars:stars,score:G.score,err:G.err,record:record,answer:!win&&c.mode==='forca'?G.word:null};
+    G.result={win:win,stars:stars,score:G.score,err:G.err,record:record,answer:!win&&c.shape==='letters'?G.word:null};
     G.phase='end'; this.draw();
     if(win){ const w=th.wave; [523,659,784,1047].forEach((f,i)=>setTimeout(()=>gmBeep(f,.15,w),i*110)); burst(); }
     else gmBeep(110,.5,'sawtooth');
