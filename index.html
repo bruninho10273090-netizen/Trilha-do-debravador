@@ -2234,6 +2234,9 @@ const gmEsc=esc;
 const gmMask=(s,w,rep)=>gmEsc(s).replace(gmEsc(w),rep);
 const gmLetters=w=>normTxt(w).toUpperCase().replace(/[^A-Z]/g,'');
 const gmAZ='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+/* peça certa da sequência: vale qualquer uma com o mesmo texto (frases repetem "de", "ou"…) */
+const gmSeqOk=(G,i)=>{ if(i===G.done) return true; if(G.seq[i]!==G.seq[G.done]) return false;
+  ['pts','slot'].forEach(k=>{ if(G[k]){ const x=G[k][i]; G[k][i]=G[k][G.done]; G[k][G.done]=x; } }); return true; };
 const gmNext3=G=>gmShuffle([G.done].concat(gmPick(G.seq.map((_,i)=>i).filter(i=>i>G.done),2)));
 const gmSeqLabel=(c,G,i)=>(c.label?gmEsc(c.label)+' ':'')+(G.base+i+1);
 const gmChoiceBtns=(r,cls)=>r.opts.map(o=>'<button class="gm-chip '+(cls||'')+'" data-g="m" data-ok="'+(o===r.w?1:0)+'">'+gmEsc(o)+'</button>').join('');
@@ -2261,7 +2264,7 @@ const GM_MECH={
   html(g,G,th,c){ const pal=['#7CB342','#A1887F','#90A4AE','#FFCA28','#4FC3F7','#E57373','#BA68C8','#4DB6AC','#FFB74D','#AED581'];
     return '<div class="gm-tower">'+G.seq.slice(0,G.done).map((x,i)=>'<div class="gm-blk" style="background:'+pal[i%pal.length]+'"><b>'+gmSeqLabel(c,G,i)+'</b> '+gmEsc(x)+'</div>').reverse().join('')+'<div class="gm-ground" aria-hidden="true"></div></div>'+
      '<p class="gm-kick">Qual bloco vem agora? ('+gmSeqLabel(c,G,G.done)+')</p><div class="gm-opts">'+G.opts.map(i=>'<button class="gm-chip" data-g="m" data-i="'+i+'">🧱 '+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
-  tap(g,G,b){ if(+b.dataset.i===G.done){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.opts=gmNext3(G); g.board(); } else g.miss(b); },
+  tap(g,G,b){ if(gmSeqOk(G,+b.dataset.i)){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.opts=gmNext3(G); g.board(); } else g.miss(b); },
   prog:G=>G.done+'/'+G.seq.length},
  mina:{name:'Mineração',say:'Pegue a picareta! Minere só os blocos certos. Bloco errado é lava!',
   init(g,G){ const good=gmPick(G.good,G.target), bad=gmPick(G.bad,Math.max(3,G.target)); G.tiles=gmShuffle(good.map(t=>({t:t,ok:1})).concat(bad.map(t=>({t:t,ok:0})))); },
@@ -2287,7 +2290,7 @@ const GM_MECH={
   html(g,G,th,c){ const pct=Math.round(G.done/G.seq.length*100);
     return '<div class="gm-track" aria-hidden="true"><span class="gm-runner" style="left:calc('+pct+'% - '+(pct/100*34)+'px)">🏃</span><span class="gm-flag">🏁</span></div>'+
      '<p class="gm-kick">Próxima plataforma: '+gmSeqLabel(c,G,G.done)+(G.spin?' · a pista girou!':'')+'</p><div class="gm-plats'+(G.spin?' spin':'')+'">'+G.order.filter(i=>i>=G.done).map(i=>'<button class="gm-chip gm-plat" data-g="m" data-i="'+i+'">'+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
-  tap(g,G,b){ G.spin=false; if(+b.dataset.i===G.done){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.order=gmShuffle(G.order); G.tShuf=0; g.board(); } else g.miss(b); },
+  tap(g,G,b){ G.spin=false; if(gmSeqOk(G,+b.dataset.i)){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.order=gmShuffle(G.order); G.tShuf=0; g.board(); } else g.miss(b); },
   prog:G=>G.done+'/'+G.seq.length},
  baloes:{name:'Estoura-Balões',say:'Os balões estão subindo! Estoure só os certos antes que eles fujam.',
   init(g,G){ G.tokens=[]; G.spawnIn=null; },
@@ -2321,7 +2324,7 @@ const GM_MECH={
     return '<div class="gm-crit" data-t="'+G.done+'" aria-hidden="true">'+e+'</div><p class="gm-kick" style="text-align:center">Estágio '+(G.done+1)+' de '+G.seq.length+'</p>'+
      (G.done?'<ol class="gm-recap" start="'+(G.base+1)+'">'+G.seq.slice(0,G.done).map(x=>'<li>'+gmEsc(x)+'</li>').join('')+'</ol>':'')+
      '<p class="gm-kick">O que vem agora? ('+gmSeqLabel(c,G,G.done)+')</p><div class="gm-opts">'+G.opts.map(i=>'<button class="gm-chip" data-g="m" data-i="'+i+'">'+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
-  tap(g,G,b){ if(+b.dataset.i===G.done){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.opts=gmNext3(G); g.board(); } else g.miss(b); },
+  tap(g,G,b){ if(gmSeqOk(G,+b.dataset.i)){ G.done++; g.ok(100); if(G.done>=G.seq.length) return g.win(); G.opts=gmNext3(G); g.board(); } else g.miss(b); },
   prog:G=>G.done+'/'+G.seq.length},
  captura:{name:'Captura',say:'Uma criatura apareceu! Ela é deste requisito? Capture as certas e deixe as outras irem.',
   init(g,G){ this.fill(G); this.next(G); },
@@ -2356,7 +2359,7 @@ const GM_MECH={
     return '<ol class="gm-slots">'+G.seq.map((x,i)=>'<li class="gm-slot'+(i<G.done?' ok':'')+'"><b>'+gmSeqLabel(c,G,i)+'</b><span>'+(i<G.done?gmEsc(x):'')+'</span></li>').join('')+'</ol>'+
      '<div class="gm-chips">'+G.order.filter(i=>i>=G.done).map(i=>'<button class="gm-chip" data-g="m" data-i="'+i+'">'+gmEsc(G.seq[i])+'</button>').join('')+'</div>'; },
   tap(g,G,b){ if(b.dataset.k==='pronto'){ G.show=false; return g.board(); } if(G.show) return;
-    if(+b.dataset.i===G.done){ G.done++; g.ok(120); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
+    if(gmSeqOk(G,+b.dataset.i)){ G.done++; g.ok(120); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
   prog:G=>G.done+'/'+G.seq.length},
  alvo:{name:'Tiro ao Alvo',say:'Os alvos aparecem e somem rápido! Acerte só os certos. Errar custa escudo.',
   init(g,G){ G.holes=Array(9).fill(null); G.popIn=400; },
@@ -2403,7 +2406,7 @@ const GM_MECH={
   html(g,G,th,c){ const path=G.pts.slice(0,G.done).map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
     return '<div class="gm-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+path+'" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/></svg>'+
      G.seq.map((x,i)=>'<button class="gm-pt'+(i<G.done?' ok':'')+'" style="left:'+G.pts[i].x+'%;top:'+G.pts[i].y+'%" data-g="m" data-i="'+i+'"'+(i<G.done?' disabled':'')+'>'+(i<G.done?'<b>'+gmSeqLabel(c,G,i)+'</b> ':'📍 ')+gmEsc(x)+'</button>').join('')+'</div><p class="gm-kick">Próximo ponto: '+gmSeqLabel(c,G,G.done)+'</p>'; },
-  tap(g,G,b){ const i=+b.dataset.i; if(i<G.done) return; if(i===G.done){ G.done++; g.ok(110); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
+  tap(g,G,b){ const i=+b.dataset.i; if(i<G.done) return; if(gmSeqOk(G,i)){ G.done++; g.ok(110); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
   prog:G=>G.done+'/'+G.seq.length},
  airdrop:{name:'Airdrop',say:'Suprimentos caindo do avião! Colete só os certos. Caixa errada custa kit médico.',
   init(g,G){ G.tokens=[]; G.spawnIn=null; },
@@ -2435,7 +2438,7 @@ const GM_MECH={
   html(g,G,th,c){ const at=G.done?this.spots[G.slot[G.done-1]]:this.spots[0];
     return '<div class="gm-bar"><i></i></div><div class="gm-pitch"><span class="gm-ball" style="left:'+at[0]+'%;top:'+at[1]+'%" aria-hidden="true">⚽</span>'+
      G.seq.map((x,i)=>{ const p=this.spots[G.slot[i]]; return '<button class="gm-pt ply'+(i<G.done?' ok':'')+'" style="left:'+p[0]+'%;top:'+p[1]+'%" data-g="m" data-i="'+i+'"'+(i<G.done?' disabled':'')+'>'+(i<G.done?'<b>'+gmSeqLabel(c,G,i)+'</b> ':'')+gmEsc(x)+'</button>'; }).join('')+'</div><p class="gm-kick">Passe '+(G.done+1)+': '+gmSeqLabel(c,G,G.done)+'</p>'; },
-  tap(g,G,b){ const i=+b.dataset.i; if(i<G.done) return; if(i===G.done){ G.done++; G.clock=0; g.ok(110); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
+  tap(g,G,b){ const i=+b.dataset.i; if(i<G.done) return; if(gmSeqOk(G,i)){ G.done++; G.clock=0; g.ok(110); if(G.done>=G.seq.length) return g.win(); g.board(); } else g.miss(b); },
   prog:G=>G.done+'/'+G.seq.length},
  escalacao:{name:'Escalação',say:'Monte o time titular! Escale só os jogadores certos e confirme. Escalação errada custa energia.',
   init(g,G){ const good=gmPick(G.good,G.target), bad=gmPick(G.bad,G.target+1); G.pool=gmShuffle(good.map(t=>({t:t,ok:1})).concat(bad.map(t=>({t:t,ok:0})))); G.fb=''; },
