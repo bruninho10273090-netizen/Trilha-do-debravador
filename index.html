@@ -2511,7 +2511,7 @@ const Game={
     const sub=it.esp?'Especialidade · '+esc(it.esp.n):esc(CLS[it.cls].name)+(it.adv?' avançada':'')+' · requisito '+esc(itemLabel(it));
     const top='<div class="gm-top"><span class="gm-logo" aria-hidden="true">'+th.icon+'</span><div class="gm-tt"><b>'+esc(th.name)+'</b><small>'+sub+'</small></div>'+
       '<button class="gm-x" data-g="mute" aria-label="'+(mute?'Ligar som':'Desligar som')+'">'+(mute?'🔇':'🔊')+'</button><button class="gm-x" data-g="close" aria-label="Fechar o jogo">✕</button></div>';
-    const body=G.phase==='intro'?this.introHtml():G.phase==='play'?'<div class="gm-card gm-play" data-mech="'+G.th.mech[this.ch().shape]+'"><div class="gm-hud" aria-live="polite"></div><div class="gm-board"></div></div>':this.endHtml();
+    const body=G.phase==='intro'?this.introHtml():G.phase==='play'?'<div class="gm-card gm-stage" data-mech="'+G.th.mech[this.ch().shape]+'"><div class="gm-hud" aria-live="polite"></div><div class="gm-board"></div></div>':this.endHtml();
     this.root.innerHTML='<div class="gm" data-th="'+th.id+'" role="dialog" aria-modal="true" aria-label="Minijogo"><div class="gm-in">'+top+body+'</div></div>';
     if(G.phase==='play'){ this.hud(); this.board(); }
   },
